@@ -1,0 +1,29 @@
+convertIntToCharacter :
+	$L24	-->	$whileConvert
+	$L25	-->	$loadLengthOfCharacter
+	$L26	-->	$internalLoopConvert
+	$L28	--> $investNumber
+	
+	ME FALTA TERMINAR ESTA FUNCIONNN
+	
+---------------------------------
+
+mips32_plot :
+	$L66	-->	$writeHeader
+	$L65	--> $returnMips32Plot 
+	$L67	--> $loopPixel
+	$L68	--> $loopInY
+	$L71	--> $loopInX
+	$L69	--> $flushRestData
+	$L75	--> $insideOfTheLoopInX
+	$L73	--> $putLineBreak
+	$L76	--> $loopShades
+	$L79	--> $insideOfTheLoopShades
+	$L77	--> $savePixelBrightness
+	$LC5	--> fourFloat
+	$L82	--> $putSpace
+	$L74	--> $loopInXCompletion
+	
+	condition
+	
+	Brightness

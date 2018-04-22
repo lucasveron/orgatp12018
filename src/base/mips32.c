@@ -1,22 +1,36 @@
-#include <debug.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <defs.h>
-#include <param.h>
 
 #define MAX_LENGTH_CHARACTER	11
 #define MAX_BUFFER   100
 #define TRUE 		 0
 #define FALSE 		 1
 
+typedef struct {
+	float UL_re; /* upper left point, real part */
+	float UL_im; /* upper left point, imaginary part */
+	float LR_re; /* lower right point, real part */
+	float LR_im; /* lower right point, imaginary part */
+	float d_re;  /* pixel step, real part */
+	float d_im;  /* pixel step, imaginary part */
+	float s_re;  /* seed of julia set, real part */
+	float s_im;  /* seed of julia set, imaginary part */
+
+	size_t x_res;  /* horizontal resolution, e.g. 640 */
+	size_t y_res;  /* vertical resolution, e.g. 480 */
+	size_t shades; /* amount of shades of gray, e.g. 255 */
+
+	FILE *fp;
+} param_t;
+
+
 enum State {
 	 OKEY = 0, ERROR_FILE = 1, ERROR_MEMORY = 2, ERROR_WRITE = 3
-	 //, INCORRECT_QUANTITY_PARAMS = 1, INCORRECT_MENU = 2, ERROR_FILE = 3, ERROR_MEMORY = 4, ERROR_PARAM = 5, ERROR_FORMAT = 6
 };
 
 FILE * fileOutput;
 int ofd;
-char * buffer;
+char buffer[MAX_BUFFER];
 int quantityCharactersInBuffer = 0;
 
 int loadFileDescriptor() {
@@ -60,31 +74,51 @@ typedef struct character {
 	int length;
 } character;
 
-character convertIntToCharacter(unsigned int value) {
-	character ch;
-	ch.length = 0;
-
+character convertIntToCharacter(unsigned int number) {
+	// Se va a usar solo con numeros positivos
+	character oneCharacter;
+	oneCharacter.length = 0;
 	// Inicializo el array de char's.
-	int i;
-	for (i = 0; i < MAX_LENGTH_CHARACTER; i++) {
-		ch.data[i] = '\0';
-	}
+	int i = 0;
+	int rest = 0;
+	// Divido por 10, porque esta en base 10
+	// Me deja el numero invertido
+	while (i < MAX_LENGTH_CHARACTER && number != 0) {
+		rest = number % 10;
 
-	sprintf(ch.data, "%d", value);
+		/*
+		 * Ascii = Nro
+		 * 48 = 0
+		 * 57 = 9
+		 */
+		oneCharacter.data[i] = rest + 48;
 
-	int finish = FALSE;
-	i = 0;
-	while (i < 20 && finish == FALSE) {
-		if (ch.data[i] == '\0') {
-			finish = TRUE;
-		} else {
-			ch.length ++;
-		}
-
+		number /= 10;
 		i ++;
 	}
 
-	return ch;
+	oneCharacter.length = i;
+
+	if (oneCharacter.length == 1) {
+		return oneCharacter;
+	}
+
+	// Invierto el nro
+	double middle = (double)oneCharacter.length / 2;
+	i = 0;
+	int last = oneCharacter.length - 1;
+	while(i < middle && last >= middle) {
+		char firstCharacter = oneCharacter.data[i];
+		char lastCharacter = oneCharacter.data[last];
+
+		oneCharacter.data[i] = lastCharacter;
+		oneCharacter.data[last] = firstCharacter;
+
+		i ++;
+		last --;
+	}
+
+	return oneCharacter;
 }
 
 int writeBufferInOFile(char * bufferToLoad, int quantityCharactersInBufferToLoad) {
@@ -118,7 +152,7 @@ int writeHeader(unsigned int sizeY, unsigned int sizeX, unsigned int shades) {
 	character chX = convertIntToCharacter(sizeX);
 
     int quantityCharactersInBufferToLoad = 9 + chX.length + chY.length;
-    char * bufferToLoad = (char *) malloc(quantityCharactersInBufferToLoad *sizeof(char));
+    char bufferToLoad [quantityCharactersInBufferToLoad];
     if (bufferToLoad == NULL) {
         fprintf(stderr, "[Error] Hubo un error de asignacion de memoria (bufferToLoad). \n");
         return ERROR_MEMORY;
@@ -130,18 +164,18 @@ int writeHeader(unsigned int sizeY, unsigned int sizeX, unsigned int shades) {
 
     int idx = 3;
     int i;
-    for (i = 0; i < chY.length; i++) {
-        bufferToLoad[idx] = chY.data[i];
-        idx ++;
-    }
-
-    bufferToLoad[idx] = ' ';
-
-    idx ++;
     for (i = 0; i < chX.length; i++) {
-        bufferToLoad[idx] = chX.data[i];
-        idx ++;
-    }
+		bufferToLoad[idx] = chX.data[i];
+		idx ++;
+	}
+
+	bufferToLoad[idx] = ' ';
+
+	idx ++;
+	for (i = 0; i < chY.length; i++) {
+		bufferToLoad[idx] = chY.data[i];
+		idx ++;
+	}
 
     bufferToLoad[idx] = '\n';
     idx ++;
@@ -154,7 +188,6 @@ int writeHeader(unsigned int sizeY, unsigned int sizeX, unsigned int shades) {
     bufferToLoad[idx] = '\n';
 
     int rdoWrite = writeBufferInOFile(bufferToLoad, quantityCharactersInBufferToLoad);
-    free(bufferToLoad);
 
     if (rdoWrite != OKEY) {
         closeFile();
@@ -165,26 +198,15 @@ int writeHeader(unsigned int sizeY, unsigned int sizeX, unsigned int shades) {
     return OKEY;
 }
 
-int loadDataInBuffer(char character) {
-    if (buffer == NULL) {
-        buffer = (char *) malloc(MAX_BUFFER *sizeof(char));
-        if (buffer == NULL) {
-            fprintf(stderr, "[Error] Hubo un error de asignacion de memoria (buffer). \n");
-            return ERROR_MEMORY;
-        }
-
-        quantityCharactersInBuffer = 0;
-    }
-
+void loadDataInBuffer(char character) {
 	buffer[quantityCharactersInBuffer] = character;
 	quantityCharactersInBuffer++;
-
-    return OKEY;
 }
 
 int putch(char character) {
 	if (quantityCharactersInBuffer < MAX_BUFFER) {
-		return loadDataInBuffer(character);
+		loadDataInBuffer(character);
+		return OKEY;
 	}
 
 	int rdo = writeBufferInOFile(buffer, quantityCharactersInBuffer);
@@ -193,7 +215,9 @@ int putch(char character) {
 	}
 
 	quantityCharactersInBuffer = 0;
-	return loadDataInBuffer(character);
+	loadDataInBuffer(character);
+
+	return OKEY;
 }
 
 int flush() {
@@ -220,14 +244,7 @@ int loadPixelBrightness(unsigned int pixelBrightness) {
     return rdo;
 }
 
-void freeBuffer() {
-	if (buffer != NULL) {
-		free(buffer);
-		buffer = NULL;
-	}
-}
-
-void mips32_plot_assemble(param_t *parms) {
+void mips32_plot(param_t * parms) {
 	fileOutput = parms->fp;
 	int rdo = loadFileDescriptor();
 	if (rdo != OKEY) {
@@ -252,12 +269,12 @@ void mips32_plot_assemble(param_t *parms) {
 	 * entre (parms->UL_re, parms->UL_im) y (parms->LR_re, parms->LR_im).
 	 * El parametro de iteracion es el punto (cr, ci).
 	 */
-	for (x = 0, cr = parms->UL_re;
-				     x < parms->x_res;
-				     ++x, cr += parms->d_re) {
-		for (y = 0, ci = parms->UL_im;
-				 y < parms->y_res;
-				 ++y, ci -= parms->d_im) {
+	for (y = 0, ci = parms->UL_im;
+		     y < parms->y_res;
+		     ++y, ci -= parms->d_im) {
+			for (x = 0, cr = parms->UL_re;
+			     x < parms->x_res;
+			     ++x, cr += parms->d_re) {
 			zr = cr;
 			zi = ci;
 
@@ -281,7 +298,6 @@ void mips32_plot_assemble(param_t *parms) {
 			rdo = loadPixelBrightness((unsigned)c);
 			if (rdo != OKEY) {
 				closeFile(parms->fp);
-				freeBuffer();
 
 				return ;
 			}
@@ -289,7 +305,6 @@ void mips32_plot_assemble(param_t *parms) {
 			rdo = putch(' ');
 			if (rdo != OKEY) {
 				closeFile();
-				freeBuffer();
 
 				return ;
 			}
@@ -300,7 +315,6 @@ void mips32_plot_assemble(param_t *parms) {
 
 		if (rdo != OKEY) {
 			closeFile();
-			freeBuffer();
 
 			return ;
 		}
@@ -308,5 +322,4 @@ void mips32_plot_assemble(param_t *parms) {
 
 	flush();
 	closeFile();
-	freeBuffer();
 }

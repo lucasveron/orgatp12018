@@ -25,7 +25,7 @@
 
 static void do_plot(void);
 extern void mips32_plot(param_t *);
-extern void mips32_plot_assemble(param_t *);
+extern void generic(param_t *);
 
 /*
  * Parametros globales.
@@ -115,7 +115,7 @@ parse_cmdline(int argc, char * const argv[])
 	}
 
 	if (plot == NULL)
-		plot = &mips32_plot;
+		plot = &generic;
 
 	if (output == NULL)
 		output = stdout;
@@ -319,11 +319,13 @@ static void
 do_method(const char *name, const char *spec)
 {
 	if (strcmp(spec, "mips32") == 0) {
-		plot = &mips32_plot_assemble;
+		printf("USA MIPS");
+
+		plot = &mips32_plot;
 		return ;
 	}
 
-	plot = &mips32_plot;
+	plot = &generic;
 }
 
 static void

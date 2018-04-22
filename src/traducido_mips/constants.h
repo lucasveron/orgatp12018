@@ -9,8 +9,9 @@
 
 #define MAX_LENGTH_CHARACTER	11
 #define MAX_BUFFER   		100
-#define TRUE 		 	0
-#define FALSE 		 	1
+
+#define TRUE 		 	1
+#define FALSE 		 	0
 
 /* State */
 #define	OKEY			0
