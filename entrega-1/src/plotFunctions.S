@@ -809,14 +809,7 @@ $returnWriteHeader:
 
 	.comm	buffer,100
 
-	.data
-	
-	.align	2
-	.type	quantityCharactersInBuffer, @object
-	.size	quantityCharactersInBuffer, 4
-quantityCharactersInBuffer:
-	.space	4
-
+	.comm	quantityCharactersInBuffer,4
 
 	.rdata
 
