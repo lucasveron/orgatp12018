@@ -3,7 +3,7 @@ DEFS    = -I. -D$(SYSTYPE)
 CFLAGS  = $(DEBUG) $(OPT) $(DEFS)
 OPTS	= 'CC=$(CC)'
 HDRS    = debug.h defs.h mygetopt.h param.h
-SRCS	= generic.c main.c mygetopt_long.c
+SRCS	= fileFunctions.S plotFunctions.S utilityFunctions.S generic.c main.c mygetopt_long.c
 PROG	= tp1
 
 $(PROG): $(SRCS) $(HDRS)
