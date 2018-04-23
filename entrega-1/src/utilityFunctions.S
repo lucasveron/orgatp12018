@@ -187,4 +187,8 @@ $L23:
 	.end	convertIntToCharacter
 	.size	convertIntToCharacter, .-convertIntToCharacter
 
-
+	.rdata
+	.align	3
+$LC2:
+	.word	0
+	.word	1073741824
