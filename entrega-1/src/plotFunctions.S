@@ -337,7 +337,7 @@ $flushRestData:
 	la	t9,flush
 	jal	ra,t9
 
-	closeFile();
+	# closeFile();
 	la	t9,closeFile
 	jal	ra,t9
 $returnMips32Plot:

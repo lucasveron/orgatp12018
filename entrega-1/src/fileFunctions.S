@@ -155,11 +155,11 @@ flush:
 	subu	sp,sp,48      # armo stack frame de 48 bytes
 
 	.cprestore 16
-	sw	ra,40($sp)      # stack[40] = ra
-	sw	$fp,36($sp)     # stack[36] = fp
-	sw	gp,32($sp)	# stack[32] = gp
+	sw	ra,40(sp)      # stack[40] = ra
+	sw	$fp,36(sp)     # stack[36] = fp
+	sw	gp,32(sp)	# stack[32] = gp
 
-	move	$fp,$sp		# igualo fp y sp
+	move	$fp,sp		# igualo fp y sp
 
 	# (quantityCharactersInBuffer > 0) ?
 	lw	v0,quantityCharactersInBuffer # v0 = quantityCharactersInBuffer = 0
