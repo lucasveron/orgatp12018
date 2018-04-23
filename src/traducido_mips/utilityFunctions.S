@@ -1,18 +1,7 @@
 #include <mips/regdef.h>
 #include <sys/syscall.h>
 
-
-
-##-----	myfree -----##
-
-	.globl	myfree
-	.ent	myfree
-
-	slt	v0,v0,65      # Guardo en v0 TRUE si word es mas chico que 65, sino guardo FALSE.
-
-
-NO OLVIDAR BORRAR TODO LO ANTERIOR
-
+#include "constants.h"
 
 ##-----	convertIntToCharacter -----##
 

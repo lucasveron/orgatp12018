@@ -1,7 +1,7 @@
 #include <mips/regdef.h>
 #include <sys/syscall.h>
 
-
+#include "constants.h"
 
 ##-----	mips32_plot -----##
 
