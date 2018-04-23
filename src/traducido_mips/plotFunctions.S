@@ -354,6 +354,451 @@ $returnMips32Plot:
 	.end	mips32_plot
 
 
+##-----	loadPixelBrightness -----##
+
+	.text
+	.align	2
+	.globl	loadPixelBrightness
+	.ent	loadPixelBrightness
+loadPixelBrightness:
+	.frame	$fp,72,ra
+	.set	noreorder
+	.cpload	t9
+	.set	reorder
+
+	# Stack frame creation
+	subu	sp,sp,72
+
+	.cprestore 16
+	sw	ra,64(sp)
+	sw	$fp,60(sp)
+	sw	gp,56(sp)
+
+	# de aqui al fin de la funcion uso $fp en lugar de sp.
+	move	$fp,sp
+
+	# Parametro
+
+	# int loadPixelBrightness(unsigned int pixelBrightness)
+	sw	a0,72($fp)      # Guardo en la dir 72($fp) el parametro recibido en a0, 
+                                # que representa a la variable pixelBrightness.
+
+	# character ch = convertIntToCharacter(pixelBrightness);
+	addu	a0,$fp,24
+	lw	a1,72($fp)
+	la	t9,convertIntToCharacter # El resultado de la funcion se encuentra en v0. TODO
+	jal	ra,t9
+
+
+	# int rdo = OKEY;
+	sw	zero,40($fp)
+
+	#    int i;
+	sw	zero,44($fp)
+
+	# for (i = 0; i < ch.length; i++)
+$loopPutchPixel:
+	lw	v0,44($fp)      # Cargo en v0, lo que esta en la dir 44($fp), que es i.
+	lw	v1,36($fp)      # Cargo en v1, lo que esta en la dir 36($fp), que es length.
+	slt	v0,v0,v1        # Si (i < length), guardo TRUE en v0, sino FALSE.
+	bne	v0,FALSE,$insideOfTheLoopPutchPixel # Si no es FALSE, o sea es TRUE, goto $insideOfTheLoopPutchPixel.
+
+	# No cumple condicion para volver a entrar al loop
+	b	$failConditionOfTheLoopPutchPixel # Salto incondicional
+$insideOfTheLoopPutchPixel:
+
+	# rdo = putch(ch.data[i]);
+	lw	v1,44($fp)      # Cargo en v1 lo de esta guardado en la dir 44($fp), que es i.
+	addu	v0,$fp,24       # Busco la direccion en donde esta data.
+	addu	v0,v0,v1        # Determino la nueva posicion sobre la variable data: Me muevo data+i.
+	lb	v0,0(v0)        # Cargo en v0 el contenido de data+i.
+	move	a0,v0           # Muevo el dato guardado en v0 a a0.
+	la	t9,putch        # Cargo en t9 la la direccion de la funcion putch.
+	jal	ra,t9           # Ejecuto la funcion.
+	sw	v0,40($fp)      # Guardo el resultado de la funcion, que esta en v0, en la dir 40($fp).
+
+	# (rdo != OKEY)
+	lw	v0,40($fp)      # Cargo en v0 lo que hay en la dir 40($fp), que es la variable rdo.
+	beq	v0,OKEY,$loopPutchPixelCompletion # If (rdo == OKEY) goto $loopPutchPixelCompletion
+
+	# rdo is nor equals OKEY
+
+	# return rdo;
+	lw	v0,40($fp)
+	sw	v0,48($fp)      # Guardo el nuevo valor de rdo, que esta en el registro v0, en la dir 48($fp).
+	b	$returnLoadPixelBrightness
+$loopPutchPixelCompletion:
+	
+	# i++
+	lw	v0,44($fp)
+	addu	v0,v0,1
+	sw	v0,44($fp)
+
+	b	$loopPutchPixel
+$failConditionOfTheLoopPutchPixel:
+	# return rdo;
+	lw	v0,40($fp)      # Cargo en v0 la variable rdo, que esta en la dir 40($fp).
+	sw	v0,48($fp)      # Guardo el nuevo valor de rdo, que esta en el registro v0, en la dir 48($fp).
+$returnLoadPixelBrightness:
+	lw	v0,48($fp)      # Cargo en v0 la variable rdo, que esta en la dir 48($fp).
+
+	move	sp,$fp
+	lw	ra,64(sp)
+	lw	$fp,60(sp)
+
+	# destruyo stack frame
+	addu	sp,sp,72
+
+	# vuelvo a funcion llamante
+	j	ra
+
+	.end	loadPixelBrightness
+
+
+##-----	loadDataInBuffer -----##
+
+	.text
+	.align	2
+	.globl	loadDataInBuffer
+	.ent	loadDataInBuffer
+loadDataInBuffer:
+	.frame	$fp,24,ra
+	.set	noreorder
+	.cpload	t9
+	.set	reorder
+
+	# Stack frame creation
+	subu	sp,sp,24
+
+	.cprestore 0
+	sw	$fp,20(sp)
+	sw	gp,16(sp)
+
+	# de aqui al fin de la funcion uso $fp en lugar de sp.
+	move	$fp,sp
+
+	# Parametro
+	# void loadDataInBuffer(char character)
+	move	v0,a0            # Muevo el parametro character, que se encuentra en a0, a v0.
+	sb	v0,8($fp)        # Guardo en la dir 8($fp), el contenido de v0, que es character.
+
+	# buffer[quantityCharactersInBuffer] = character;
+	lw	v1,quantityCharactersInBuffer # Cargo en v1 la cantidad de caracteres que me voy a 
+                                              # mover sobre buffer.
+	la	v0,buffer        # Cargo la direccion de inicio de buffer.
+	addu	v1,v1,v0         # Guardo en v1 la nueva direccion sobre la variable buffer.
+	lbu	v0,8($fp)        # Cargo en v0 el valor de character (un byte), que esta en la dir 8($fp).
+	sb	v0,0(v1)         # Guardo en buffer+quantityCharactersInBuffer character
+
+	# quantityCharactersInBuffer++;
+	lw	v0,quantityCharactersInBuffer
+	addu	v0,v0,1
+	sw	v0,quantityCharactersInBuffer
+
+	move	sp,$fp
+	lw	$fp,20(sp)
+
+	# destruyo stack frame
+	addu	sp,sp,24
+
+	# vuelvo a funcion llamante
+	j	ra
+	.end	loadDataInBuffer
+
+
+##-----	writeHeader -----##
+
+	.text
+	.align	2
+	.globl	writeHeader
+	.ent	writeHeader
+writeHeader:
+	.frame	$fp,120,ra
+	.set	noreorder
+	.cpload	t9
+	.set	reorder
+
+	# Stack frame creation
+	subu	sp,sp,120
+
+	.cprestore 16
+	sw	ra,112(sp)
+	sw	$fp,108(sp)
+	sw	gp,104(sp)
+
+	# de aqui al fin de la funcion uso $fp en lugar de sp.
+	move	$fp,sp
+
+	# Parametro
+	# int writeHeader(unsigned int sizeY, unsigned int sizeX, unsigned int shades)
+	sw	a0,120($fp)   # Guardo en la dir 120($fp), el primer parametro que viene en a0, y es
+                              # sizeY
+	sw	a1,124($fp)   # Guardo en la dir 124($fp), el segundo parametro que viene en a1, y es
+                              # sizeX
+	sw	a2,128($fp)   # Guardo en la dir 128($fp), el tercer parametro que viene en a2, y es
+                              # shades
+
+	sw	sp,92($fp)
+
+	# character chY = convertIntToCharacter(sizeY);
+	addu	a0,$fp,24
+	lw	a1,120($fp)   # Envio sizeY como parametro.
+	la	t9,convertIntToCharacter
+	jal	ra,t9
+	
+	# character chX = convertIntToCharacter(sizeX);
+	addu	v0,$fp,40
+	move	a0,v0
+	lw	a1,124($fp)
+	la	t9,convertIntToCharacter
+	jal	ra,t9
+
+	# character chShades = convertIntToCharacter(shades);
+	addu	v0,$fp,56
+	move	a0,v0
+	lw	a1,128($fp)
+	la	t9,convertIntToCharacter
+	jal	ra,t9
+
+	# int quantityCharactersInBufferToLoad = 6 + chX.length + chY.length + chShades.length;
+	lw	v1,52($fp)
+	lw	v0,36($fp)
+	addu	v0,v1,v0
+	lw	v0,68($fp)
+	addu	v0,v1,v0
+	addu	v0,v0,6
+	sw	v0,72($fp)    # Guardo en la dir 72($fp) el resultado de la suma, que seria la 
+                              # variable quantityCharactersInBufferToLoad.
+
+	# char bufferToLoad [quantityCharactersInBufferToLoad];
+	lw	v0,72($fp)
+	addu	v0,v0,-1
+	addu	v0,v0,1
+	addu	v0,v0,7
+	srl	v0,v0,3
+	sll	v0,v0,3
+	subu	sp,sp,v0
+	addu	v0,sp,16
+	sw	v0,96($fp)     # Guardo en la dir 96($fp) bufferToLoad (la direccion al primer 
+                               # elemento del array).
+
+	# bufferToLoad[0] = 'P';
+	li	v0,80          # Cargo en v0 el caracter P (80 en ascii).
+	lw	v1,96($fp)     # Cargo en v1 bufferToLoad (la direccion al primer 
+                               # elemento del array).
+	sb	v0,0(v1)       # Guardo en la primer posicion del array, el caracter P (guardado
+                               # en v0).
+
+	# bufferToLoad[1] = '2';
+	li	v0,50          # Cargo en v0 el caracter 2 (50 en ascii).
+	lw	a0,96($fp)
+	sb	v0,1(a0)
+
+	# bufferToLoad[2] = '\n';
+	li	v0,10          # Cargo en v0 el caracter \n (10 en ascii).
+	lw	v1,96($fp)
+	sb	v0,2(v1)
+
+	# int idx = 3;
+	li	v0,3
+	sw	v0,76($fp)     # Guardo en la dir 76($fp) la variable idx inicializada en 3.
+
+	# int i; i = 0;
+	sw	zero,80($fp)
+$loopWriteHeaderChX:
+	# for (i = 0; i < chX.length; i++)
+	lw	v0,80($fp)    # Cargo en v0 la variable i, que esta en la dir 80($fp).
+	lw	v1,52($fp)    # Cargo en v0 la variable length (de chX), que esta en la dir 52($fp).
+	slt	v0,v0,v1
+	bne	v0,FALSE,$insideOfTheLoopWriteHeaderChX # Si (i < chX.length) es no es FALSE, o sea 
+							# es TRUE, goto $insideOfTheLoopWriteHeaderChX.
+	b	$loadSpaceInWriteHeader
+$insideOfTheLoopWriteHeaderChX:
+	# bufferToLoad[idx] = chX.data[i];
+
+	# bufferToLoad[idx]
+	lw	v0,76($fp)
+	lw	v1,96($fp)
+	addu	a0,v1,v0
+
+	# chX.data[i]
+	addu	v1,$fp,40
+	lw	v0,80($fp)
+	addu	v0,v1,v0
+	lbu	v0,0(v0)
+
+	# Hago efectivamente bufferToLoad[idx] = chX.data[i];
+	sb	v0,0(a0)
+	
+	# idx ++;
+	lw	v0,76($fp)
+	addu	v0,v0,1
+	sw	v0,76($fp)
+
+	# i++
+	lw	v0,80($fp)
+	addu	v0,v0,1
+	sw	v0,80($fp)
+
+	b	$loopWriteHeaderChX
+$loadSpaceInWriteHeader:
+	# bufferToLoad[idx] = ' ';
+
+	# bufferToLoad[idx]
+	lw	v0,76($fp)	# Cargo en v0 idx
+	lw	a0,96($fp)
+	addu	v1,a0,v0
+
+	# ' ' (32 en ascii)
+	li	v0,32
+
+	# Hago efectivamente bufferToLoad[idx] = ' ';
+	sb	v0,0(v1)
+
+	# idx ++;
+	lw	v0,76($fp)
+	addu	v0,v0,1
+	sw	v0,76($fp)
+
+	# for (i = 0; i < chY.length; i++) 
+	# i = 0
+	sw	zero,80($fp)
+$loopWriteHeaderChY:
+	# (i < chY.length) ?
+	lw	v0,80($fp)
+	lw	v1,36($fp)
+	slt	v0,v0,v1
+	bne	v0,FALSE,$insideOfTheLoopWriteHeaderChY # Si (i < chX.length) es no es FALSE, o sea 
+							# es TRUE, goto $insideOfTheLoopWriteHeaderChY.
+
+	b	$loadLineBreakInWriteHeader
+$insideOfTheLoopWriteHeaderChY:
+	# bufferToLoad[idx] = chY.data[i];
+
+	# bufferToLoad[idx]
+	lw	v0,76($fp)
+	lw	v1,96($fp)
+	addu	a0,v1,v0
+
+	# chY.data[i]
+	lw	v1,80($fp)
+	addu	v0,$fp,24
+	addu	v0,v0,v1
+	lbu	v0,0(v0)
+
+	# Hago efectivamente bufferToLoad[idx] = chY.data[i];
+	sb	v0,0(a0)
+
+	# idx ++;
+	lw	v0,76($fp)
+	addu	v0,v0,1
+	sw	v0,76($fp)
+
+	# i++	
+	lw	v0,80($fp)
+	addu	v0,v0,1
+	sw	v0,80($fp)
+	
+	b	$loopWriteHeaderChY
+$loadLineBreakInWriteHeader:
+	# bufferToLoad[idx] = '\n';
+	lw	v0,76($fp)
+	lw	a0,96($fp)
+	addu	v1,a0,v0
+	li	v0,10             # El salto de linea en ascii es igual a 10 ('\n').
+	sb	v0,0(v1)
+	
+	# idx ++;
+	lw	v0,76($fp)
+	addu	v0,v0,1
+	sw	v0,76($fp)
+
+	# for (i = 0; i < chShades.length; i++)
+	# i = 0
+	sw	zero,80($fp)	
+$loopWriteHeaderChShades:
+	# (i < chShades.length) ?
+	lw	v0,80($fp)       # Cargo i en v0
+	lw	v1,68($fp)       # Cargo chShades.length en v1
+	slt	v0,v0,v1
+	bne	v0,FALSE,$insideOfTheLoopWriteHeaderChShades # Si (i < chShades.length) es no es FALSE, o sea 
+							# es TRUE, goto $insideOfTheLoopWriteHeaderChShades.
+
+	b	$loadLineBreakFinalInWriteHeader
+
+$insideOfTheLoopWriteHeaderChShades:
+	# bufferToLoad[idx] = chShades.data[i];
+
+	# bufferToLoad[idx]
+	lw	v0,76($fp)
+	lw	v1,96($fp)
+	addu	a0,v1,v0
+
+	# chShades.data[i]
+	addu	v1,$fp,56
+	lw	v0,80($fp)
+	addu	v0,v1,v0
+	lbu	v0,0(v0)
+
+	# Hago efectivamente bufferToLoad[idx] = chShades.data[i];
+	sb	v0,0(a0)
+
+	# idx ++;
+	lw	v0,76($fp)
+	addu	v0,v0,1
+	sw	v0,76($fp)
+
+	# i++
+	lw	v0,80($fp)
+	addu	v0,v0,1
+	sw	v0,80($fp)
+	b	$loopWriteHeaderChShades
+$loadLineBreakFinalInWriteHeader:
+
+	# bufferToLoad[idx] = '\n';
+	lw	v0,76($fp)
+	lw	a0,96($fp)
+	addu	v1,a0,v0
+	li	v0,10         # ascii 10 es el salto de linea
+	sb	v0,0(v1)
+
+	# int rdoWrite = writeBufferInOFile(bufferToLoad, quantityCharactersInBufferToLoad);
+	lw	a0,96($fp)
+	lw	a1,72($fp)
+	la	t9,writeBufferInOFile
+	jal	ra,t9
+	sw	v0,84($fp)     # En la dir 84($fp) guardo el rdo de la funcion, que es la 
+                               # variable rdoWrite.
+	
+	# (rdoWrite != OKEY) ?
+	lw	v0,84($fp)
+	beq	v0,OKEY,$returnOkeyWriteHeader
+
+	# rdoWrite is not equals OKEY
+	# closeFile();
+	la	t9,closeFile
+	jal	ra,t9
+	lw	sp,92($fp)
+	li	v0,ERROR_WRITE
+	sw	v0,88($fp)
+	b	$returnWriteHeader
+$returnOkeyWriteHeader:
+	lw	sp,92($fp)
+	sw	zero,88($fp)   # OKEY = zero
+$returnWriteHeader:
+	lw	v0,88($fp)
+	move	sp,$fp
+	lw	ra,112(sp)
+	lw	$fp,108(sp)
+
+	# destruyo stack frame
+	addu	sp,sp,120
+
+	# vuelvo a funcion llamante
+	j	ra
+	.end	writeHeader
+
+
 # ---------------------------------------------------------------------------- #
 
 ## Variables auxiliares
@@ -363,6 +808,15 @@ $returnMips32Plot:
 	.comm	ofd,4
 
 	.comm	buffer,100
+
+	.data
+	
+	.align	2
+	.type	quantityCharactersInBuffer, @object
+	.size	quantityCharactersInBuffer, 4
+quantityCharactersInBuffer:
+	.space	4
+
 
 	.rdata
 

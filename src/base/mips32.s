@@ -345,47 +345,48 @@ $L34:
 	j	$ra
 	.end	writeBufferInOFile
 	.size	writeBufferInOFile, .-writeBufferInOFile
-	.rdata
-	.align	2
-$LC4:
-	.ascii	"[Error] Hubo un error de asignacion de memoria (bufferTo"
-	.ascii	"Load). \n\000"
-	.text
 	.align	2
 	.globl	writeHeader
 	.ent	writeHeader
 writeHeader:
-	.frame	$fp,104,$ra		# vars= 64, regs= 3/0, args= 16, extra= 8
+	.frame	$fp,120,$ra		# vars= 80, regs= 3/0, args= 16, extra= 8
 	.mask	0xd0000000,-8
 	.fmask	0x00000000,0
 	.set	noreorder
 	.cpload	$t9
 	.set	reorder
-	subu	$sp,$sp,104
+	subu	$sp,$sp,120
 	.cprestore 16
-	sw	$ra,96($sp)
-	sw	$fp,92($sp)
-	sw	$gp,88($sp)
+	sw	$ra,112($sp)
+	sw	$fp,108($sp)
+	sw	$gp,104($sp)
 	move	$fp,$sp
-	sw	$a0,104($fp)
-	sw	$a1,108($fp)
-	sw	$a2,112($fp)
-	sw	$sp,76($fp)
+	sw	$a0,120($fp)
+	sw	$a1,124($fp)
+	sw	$a2,128($fp)
+	sw	$sp,92($fp)
 	addu	$a0,$fp,24
-	lw	$a1,104($fp)
+	lw	$a1,120($fp)
 	la	$t9,convertIntToCharacter
 	jal	$ra,$t9
 	addu	$v0,$fp,40
 	move	$a0,$v0
-	lw	$a1,108($fp)
+	lw	$a1,124($fp)
+	la	$t9,convertIntToCharacter
+	jal	$ra,$t9
+	addu	$v0,$fp,56
+	move	$a0,$v0
+	lw	$a1,128($fp)
 	la	$t9,convertIntToCharacter
 	jal	$ra,$t9
 	lw	$v1,52($fp)
 	lw	$v0,36($fp)
+	addu	$v1,$v1,$v0
+	lw	$v0,68($fp)
 	addu	$v0,$v1,$v0
-	addu	$v0,$v0,9
-	sw	$v0,56($fp)
-	lw	$v0,56($fp)
+	addu	$v0,$v0,6
+	sw	$v0,72($fp)
+	lw	$v0,72($fp)
 	addu	$v0,$v0,-1
 	addu	$v0,$v0,1
 	addu	$v0,$v0,7
@@ -393,144 +394,133 @@ writeHeader:
 	sll	$v0,$v0,3
 	subu	$sp,$sp,$v0
 	addu	$v0,$sp,16
-	sw	$v0,80($fp)
-	lw	$v1,80($fp)
-	bne	$v1,$zero,$L43
-	la	$a0,__sF+176
-	la	$a1,$LC4
-	la	$t9,fprintf
-	jal	$ra,$t9
-	lw	$sp,76($fp)
-	li	$a0,2			# 0x2
-	sw	$a0,72($fp)
-	b	$L42
-$L43:
+	sw	$v0,96($fp)
 	li	$v0,80			# 0x50
-	lw	$v1,80($fp)
+	lw	$v1,96($fp)
 	sb	$v0,0($v1)
 	li	$v0,50			# 0x32
-	lw	$a0,80($fp)
+	lw	$a0,96($fp)
 	sb	$v0,1($a0)
 	li	$v0,10			# 0xa
-	lw	$v1,80($fp)
+	lw	$v1,96($fp)
 	sb	$v0,2($v1)
 	li	$v0,3			# 0x3
-	sw	$v0,60($fp)
-	sw	$zero,64($fp)
-$L44:
-	lw	$v0,64($fp)
+	sw	$v0,76($fp)
+	sw	$zero,80($fp)
+$L43:
+	lw	$v0,80($fp)
 	lw	$v1,52($fp)
 	slt	$v0,$v0,$v1
-	bne	$v0,$zero,$L47
-	b	$L45
-$L47:
-	lw	$v0,60($fp)
-	lw	$v1,80($fp)
+	bne	$v0,$zero,$L46
+	b	$L44
+$L46:
+	lw	$v0,76($fp)
+	lw	$v1,96($fp)
 	addu	$a0,$v1,$v0
 	addu	$v1,$fp,40
-	lw	$v0,64($fp)
+	lw	$v0,80($fp)
 	addu	$v0,$v1,$v0
 	lbu	$v0,0($v0)
 	sb	$v0,0($a0)
-	lw	$v0,60($fp)
+	lw	$v0,76($fp)
 	addu	$v0,$v0,1
-	sw	$v0,60($fp)
-	lw	$v0,64($fp)
+	sw	$v0,76($fp)
+	lw	$v0,80($fp)
 	addu	$v0,$v0,1
-	sw	$v0,64($fp)
-	b	$L44
-$L45:
-	lw	$v0,60($fp)
-	lw	$a0,80($fp)
+	sw	$v0,80($fp)
+	b	$L43
+$L44:
+	lw	$v0,76($fp)
+	lw	$a0,96($fp)
 	addu	$v1,$a0,$v0
 	li	$v0,32			# 0x20
 	sb	$v0,0($v1)
-	lw	$v0,60($fp)
+	lw	$v0,76($fp)
 	addu	$v0,$v0,1
-	sw	$v0,60($fp)
-	sw	$zero,64($fp)
-$L48:
-	lw	$v0,64($fp)
+	sw	$v0,76($fp)
+	sw	$zero,80($fp)
+$L47:
+	lw	$v0,80($fp)
 	lw	$v1,36($fp)
 	slt	$v0,$v0,$v1
-	bne	$v0,$zero,$L51
-	b	$L49
-$L51:
-	lw	$v0,60($fp)
-	lw	$v1,80($fp)
+	bne	$v0,$zero,$L50
+	b	$L48
+$L50:
+	lw	$v0,76($fp)
+	lw	$v1,96($fp)
 	addu	$a0,$v1,$v0
-	lw	$v1,64($fp)
+	lw	$v1,80($fp)
 	addu	$v0,$fp,24
 	addu	$v0,$v0,$v1
 	lbu	$v0,0($v0)
 	sb	$v0,0($a0)
-	lw	$v0,60($fp)
+	lw	$v0,76($fp)
 	addu	$v0,$v0,1
-	sw	$v0,60($fp)
-	lw	$v0,64($fp)
+	sw	$v0,76($fp)
+	lw	$v0,80($fp)
 	addu	$v0,$v0,1
-	sw	$v0,64($fp)
-	b	$L48
-$L49:
-	lw	$v0,60($fp)
-	lw	$a0,80($fp)
+	sw	$v0,80($fp)
+	b	$L47
+$L48:
+	lw	$v0,76($fp)
+	lw	$a0,96($fp)
 	addu	$v1,$a0,$v0
 	li	$v0,10			# 0xa
 	sb	$v0,0($v1)
-	lw	$v0,60($fp)
+	lw	$v0,76($fp)
 	addu	$v0,$v0,1
-	sw	$v0,60($fp)
-	lw	$v0,60($fp)
-	lw	$a0,80($fp)
-	addu	$v1,$a0,$v0
-	li	$v0,50			# 0x32
-	sb	$v0,0($v1)
-	lw	$v0,60($fp)
+	sw	$v0,76($fp)
+	sw	$zero,80($fp)
+$L51:
+	lw	$v0,80($fp)
+	lw	$v1,68($fp)
+	slt	$v0,$v0,$v1
+	bne	$v0,$zero,$L54
+	b	$L52
+$L54:
+	lw	$v0,76($fp)
+	lw	$v1,96($fp)
+	addu	$a0,$v1,$v0
+	addu	$v1,$fp,56
+	lw	$v0,80($fp)
+	addu	$v0,$v1,$v0
+	lbu	$v0,0($v0)
+	sb	$v0,0($a0)
+	lw	$v0,76($fp)
 	addu	$v0,$v0,1
-	sw	$v0,60($fp)
-	lw	$v0,60($fp)
-	lw	$a0,80($fp)
-	addu	$v1,$a0,$v0
-	li	$v0,53			# 0x35
-	sb	$v0,0($v1)
-	lw	$v0,60($fp)
+	sw	$v0,76($fp)
+	lw	$v0,80($fp)
 	addu	$v0,$v0,1
-	sw	$v0,60($fp)
-	lw	$v0,60($fp)
-	lw	$a0,80($fp)
-	addu	$v1,$a0,$v0
-	li	$v0,53			# 0x35
-	sb	$v0,0($v1)
-	lw	$v0,60($fp)
-	addu	$v0,$v0,1
-	sw	$v0,60($fp)
-	lw	$v0,60($fp)
-	lw	$a0,80($fp)
+	sw	$v0,80($fp)
+	b	$L51
+$L52:
+	lw	$v0,76($fp)
+	lw	$a0,96($fp)
 	addu	$v1,$a0,$v0
 	li	$v0,10			# 0xa
 	sb	$v0,0($v1)
-	lw	$a0,80($fp)
-	lw	$a1,56($fp)
+	lw	$a0,96($fp)
+	lw	$a1,72($fp)
 	la	$t9,writeBufferInOFile
 	jal	$ra,$t9
-	sw	$v0,68($fp)
-	lw	$v0,68($fp)
-	beq	$v0,$zero,$L52
+	sw	$v0,84($fp)
+	lw	$v0,84($fp)
+	beq	$v0,$zero,$L55
 	la	$t9,closeFile
 	jal	$ra,$t9
-	lw	$sp,76($fp)
+	lw	$sp,92($fp)
 	li	$v0,3			# 0x3
-	sw	$v0,72($fp)
+	sw	$v0,88($fp)
 	b	$L42
-$L52:
-	lw	$sp,76($fp)
-	sw	$zero,72($fp)
+$L55:
+	lw	$sp,92($fp)
+	sw	$zero,88($fp)
 $L42:
-	lw	$v0,72($fp)
+	lw	$v0,88($fp)
 	move	$sp,$fp
-	lw	$ra,96($sp)
-	lw	$fp,92($sp)
-	addu	$sp,$sp,104
+	lw	$ra,112($sp)
+	lw	$fp,108($sp)
+	addu	$sp,$sp,120
 	j	$ra
 	.end	writeHeader
 	.size	writeHeader, .-writeHeader
@@ -585,32 +575,32 @@ putch:
 	sb	$v0,24($fp)
 	lw	$v0,quantityCharactersInBuffer
 	slt	$v0,$v0,100
-	beq	$v0,$zero,$L55
+	beq	$v0,$zero,$L58
 	lb	$v0,24($fp)
 	move	$a0,$v0
 	la	$t9,loadDataInBuffer
 	jal	$ra,$t9
 	sw	$zero,32($fp)
-	b	$L54
-$L55:
+	b	$L57
+$L58:
 	la	$a0,buffer
 	lw	$a1,quantityCharactersInBuffer
 	la	$t9,writeBufferInOFile
 	jal	$ra,$t9
 	sw	$v0,28($fp)
 	lw	$v0,28($fp)
-	beq	$v0,$zero,$L56
+	beq	$v0,$zero,$L59
 	lw	$v0,28($fp)
 	sw	$v0,32($fp)
-	b	$L54
-$L56:
+	b	$L57
+$L59:
 	sw	$zero,quantityCharactersInBuffer
 	lb	$v0,24($fp)
 	move	$a0,$v0
 	la	$t9,loadDataInBuffer
 	jal	$ra,$t9
 	sw	$zero,32($fp)
-$L54:
+$L57:
 	lw	$v0,32($fp)
 	move	$sp,$fp
 	lw	$ra,48($sp)
@@ -636,16 +626,16 @@ flush:
 	sw	$gp,32($sp)
 	move	$fp,$sp
 	lw	$v0,quantityCharactersInBuffer
-	blez	$v0,$L58
+	blez	$v0,$L61
 	la	$a0,buffer
 	lw	$a1,quantityCharactersInBuffer
 	la	$t9,writeBufferInOFile
 	jal	$ra,$t9
 	sw	$v0,24($fp)
-	b	$L57
-$L58:
+	b	$L60
+$L61:
 	sw	$zero,24($fp)
-$L57:
+$L60:
 	lw	$v0,24($fp)
 	move	$sp,$fp
 	lw	$ra,40($sp)
@@ -677,13 +667,13 @@ loadPixelBrightness:
 	jal	$ra,$t9
 	sw	$zero,40($fp)
 	sw	$zero,44($fp)
-$L60:
+$L63:
 	lw	$v0,44($fp)
 	lw	$v1,36($fp)
 	slt	$v0,$v0,$v1
-	bne	$v0,$zero,$L63
-	b	$L61
-$L63:
+	bne	$v0,$zero,$L66
+	b	$L64
+$L66:
 	lw	$v1,44($fp)
 	addu	$v0,$fp,24
 	addu	$v0,$v0,$v1
@@ -693,19 +683,19 @@ $L63:
 	jal	$ra,$t9
 	sw	$v0,40($fp)
 	lw	$v0,40($fp)
-	beq	$v0,$zero,$L62
+	beq	$v0,$zero,$L65
 	lw	$v0,40($fp)
 	sw	$v0,48($fp)
-	b	$L59
-$L62:
+	b	$L62
+$L65:
 	lw	$v0,44($fp)
 	addu	$v0,$v0,1
 	sw	$v0,44($fp)
-	b	$L60
-$L61:
+	b	$L63
+$L64:
 	lw	$v0,40($fp)
 	sw	$v0,48($fp)
-$L59:
+$L62:
 	lw	$v0,48($fp)
 	move	$sp,$fp
 	lw	$ra,64($sp)
@@ -716,7 +706,7 @@ $L59:
 	.size	loadPixelBrightness, .-loadPixelBrightness
 	.rdata
 	.align	2
-$LC5:
+$LC4:
 	.word	1082130432
 	.text
 	.align	2
@@ -743,9 +733,9 @@ mips32_plot:
 	jal	$ra,$t9
 	sw	$v0,24($fp)
 	lw	$v0,24($fp)
-	beq	$v0,$zero,$L66
-	b	$L65
-$L66:
+	beq	$v0,$zero,$L69
+	b	$L68
+$L69:
 	lw	$v1,88($fp)
 	lw	$a1,88($fp)
 	lw	$v0,88($fp)
@@ -758,46 +748,46 @@ $L66:
 	jal	$ra,$t9
 	sw	$v0,24($fp)
 	lw	$v0,24($fp)
-	beq	$v0,$zero,$L67
-	b	$L65
-$L67:
+	beq	$v0,$zero,$L70
+	b	$L68
+$L70:
 	sw	$zero,60($fp)
 	lw	$v0,88($fp)
 	l.s	$f0,4($v0)
 	s.s	$f0,32($fp)
-$L68:
+$L71:
 	lw	$v0,88($fp)
 	lw	$v1,60($fp)
 	lw	$v0,36($v0)
 	sltu	$v0,$v1,$v0
-	bne	$v0,$zero,$L71
-	b	$L69
-$L71:
+	bne	$v0,$zero,$L74
+	b	$L72
+$L74:
 	sw	$zero,56($fp)
 	lw	$v0,88($fp)
 	l.s	$f0,0($v0)
 	s.s	$f0,28($fp)
-$L72:
+$L75:
 	lw	$v0,88($fp)
 	lw	$v1,56($fp)
 	lw	$v0,32($v0)
 	sltu	$v0,$v1,$v0
-	bne	$v0,$zero,$L75
-	b	$L73
-$L75:
+	bne	$v0,$zero,$L78
+	b	$L76
+$L78:
 	l.s	$f0,28($fp)
 	s.s	$f0,36($fp)
 	l.s	$f0,32($fp)
 	s.s	$f0,40($fp)
 	sw	$zero,64($fp)
-$L76:
+$L79:
 	lw	$v0,88($fp)
 	lw	$v1,64($fp)
 	lw	$v0,40($v0)
 	sltu	$v0,$v1,$v0
-	bne	$v0,$zero,$L79
-	b	$L77
-$L79:
+	bne	$v0,$zero,$L82
+	b	$L80
+$L82:
 	l.s	$f2,36($fp)
 	l.s	$f0,36($fp)
 	mul.s	$f4,$f2,$f0
@@ -807,9 +797,9 @@ $L79:
 	add.s	$f0,$f4,$f0
 	mov.s	$f2,$f0
 	s.s	$f2,52($fp)
-	l.s	$f0,$LC5
+	l.s	$f0,$LC4
 	c.le.s	$f0,$f2
-	bc1t	$L77
+	bc1t	$L80
 	lw	$v0,88($fp)
 	l.s	$f2,36($fp)
 	l.s	$f0,36($fp)
@@ -836,30 +826,30 @@ $L79:
 	lw	$v0,64($fp)
 	addu	$v0,$v0,1
 	sw	$v0,64($fp)
-	b	$L76
-$L77:
+	b	$L79
+$L80:
 	lw	$a0,64($fp)
 	la	$t9,loadPixelBrightness
 	jal	$ra,$t9
 	sw	$v0,24($fp)
 	lw	$v0,24($fp)
-	beq	$v0,$zero,$L82
+	beq	$v0,$zero,$L85
 	lw	$v0,88($fp)
 	lw	$a0,44($v0)
 	la	$t9,closeFile
 	jal	$ra,$t9
-	b	$L65
-$L82:
+	b	$L68
+$L85:
 	li	$a0,32			# 0x20
 	la	$t9,putch
 	jal	$ra,$t9
 	sw	$v0,24($fp)
 	lw	$v0,24($fp)
-	beq	$v0,$zero,$L74
+	beq	$v0,$zero,$L77
 	la	$t9,closeFile
 	jal	$ra,$t9
-	b	$L65
-$L74:
+	b	$L68
+$L77:
 	lw	$v0,56($fp)
 	addu	$v0,$v0,1
 	sw	$v0,56($fp)
@@ -868,18 +858,18 @@ $L74:
 	l.s	$f0,16($v0)
 	add.s	$f0,$f2,$f0
 	s.s	$f0,28($fp)
-	b	$L72
-$L73:
+	b	$L75
+$L76:
 	li	$a0,10			# 0xa
 	la	$t9,putch
 	jal	$ra,$t9
 	sw	$v0,24($fp)
 	lw	$v0,24($fp)
-	beq	$v0,$zero,$L70
+	beq	$v0,$zero,$L73
 	la	$t9,closeFile
 	jal	$ra,$t9
-	b	$L65
-$L70:
+	b	$L68
+$L73:
 	lw	$v0,60($fp)
 	addu	$v0,$v0,1
 	sw	$v0,60($fp)
@@ -888,13 +878,13 @@ $L70:
 	l.s	$f0,20($v0)
 	sub.s	$f0,$f2,$f0
 	s.s	$f0,32($fp)
-	b	$L68
-$L69:
+	b	$L71
+$L72:
 	la	$t9,flush
 	jal	$ra,$t9
 	la	$t9,closeFile
 	jal	$ra,$t9
-$L65:
+$L68:
 	move	$sp,$fp
 	lw	$ra,80($sp)
 	lw	$fp,76($sp)

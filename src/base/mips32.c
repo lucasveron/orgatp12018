@@ -150,13 +150,10 @@ int writeBufferInOFile(char * bufferToLoad, int quantityCharactersInBufferToLoad
 int writeHeader(unsigned int sizeY, unsigned int sizeX, unsigned int shades) {
 	character chY = convertIntToCharacter(sizeY);
 	character chX = convertIntToCharacter(sizeX);
+	character chShades = convertIntToCharacter(shades);
 
-    int quantityCharactersInBufferToLoad = 9 + chX.length + chY.length;
+    int quantityCharactersInBufferToLoad = 6 + chX.length + chY.length + chShades.length;
     char bufferToLoad [quantityCharactersInBufferToLoad];
-    if (bufferToLoad == NULL) {
-        fprintf(stderr, "[Error] Hubo un error de asignacion de memoria (bufferToLoad). \n");
-        return ERROR_MEMORY;
-    }
 
     bufferToLoad[0] = 'P';
     bufferToLoad[1] = '2';
@@ -178,13 +175,13 @@ int writeHeader(unsigned int sizeY, unsigned int sizeX, unsigned int shades) {
 	}
 
     bufferToLoad[idx] = '\n';
+
     idx ++;
-    bufferToLoad[idx] = '2';
-    idx ++;
-    bufferToLoad[idx] = '5';
-    idx ++;
-    bufferToLoad[idx] = '5';
-    idx ++;
+    for (i = 0; i < chShades.length; i++) {
+		bufferToLoad[idx] = chShades.data[i];
+		idx ++;
+	}
+
     bufferToLoad[idx] = '\n';
 
     int rdoWrite = writeBufferInOFile(bufferToLoad, quantityCharactersInBufferToLoad);
