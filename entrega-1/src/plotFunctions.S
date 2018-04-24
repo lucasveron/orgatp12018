@@ -132,9 +132,9 @@ $loopInX:
 $conditionLoopInX:
 
 	# (x < parms->x_res) ?
-	lw	v0,88($fp)    # Cargo en v0 la dir apuntada por parms (* parms), guardada en la dir 88($fp).
-	lw	v0,32(v0)     # Cargo en v0 lo guardado en la dir *parms+32, que es x_res.
+	lw	v0,88($fp)    # Cargo en v0 la dir apuntada por parms (* parms), guardada en la dir 88($fp).	
 	lw	v1,56($fp)    # Cargo en v1 lo guardado en la dir 56($fp), que seria x.
+	lw	v0,32(v0)     # Cargo en v0 lo guardado en la dir *parms+32, que es x_res.
 	sltu	v0,v1,v0      # Guardo en v0 TRUE si x < parms->x_res, sino guardo FALSE.
 	bne	v0,FALSE,$insideOfTheLoopInX # Si no es FALSE, es TRUE, continuo dentro del for, salto a $insideOfTheLoopInX.
 
@@ -158,8 +158,8 @@ $loopShades:
 
 	# (c < parms->shades) ?
 	lw	v0,88($fp)    # Cargo en v0 la dir apuntada por parms (* parms), guardada en la dir 88($fp).
-	lw	v0,40(v0)     # Cargo en v0 lo guardado en la dir *parms+40, que es shades.
 	lw	v1,64($fp)    # Cargo en v1 lo guardado en la dir 64($fp), que seria c.
+	lw	v0,40(v0)     # Cargo en v0 lo guardado en la dir *parms+40, que es shades.
 	sltu	v0,v1,v0      # Guardo en v0 TRUE si c < parms->shades, sino guardo FALSE.
 	bne	v0,FALSE,$insideOfTheLoopShades # Si no es FALSE, es TRUE, continuo dentro 
                                                 # del for, salto a $insideOfTheLoopShades.
