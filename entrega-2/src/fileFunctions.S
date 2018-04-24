@@ -3,10 +3,13 @@
 
 #include "constants.h"
 
-	#.file	1 "fileFunctions.c"
-	#.section .mdebug.abi32
-	#.previous
-	#.abicalls
+# Size mensajes
+#define BYTES_MENSAJE_ERROR_WRITE   52
+#define BYTES_MENSAJE_ERROR_CLOSE_FILE   68
+#define BYTES_MENSAJE_ERROR_LOAD_FILE  	 51
+
+#define FILE_DESCRIPTOR_STDERR	    2
+
 	.globl	quantityCharactersInBuffer
 	.globl	quantityCharactersInBuffer
 	.section	.bss
@@ -15,24 +18,15 @@
 	.size	quantityCharactersInBuffer, 4
 quantityCharactersInBuffer:
 	.space	4
-	.rdata
-	.align	2
-$LC0:
-	.ascii	"[Error] No se ha especificado archivo de salida.\n\000"
+
+#---------------  loadFileDescriptor  ---------------#
+
 	.text
 	.align	2
-$LC3:
-	.ascii	"[Error] Hubo un error al escribir en el archivo. \n\000"
-	.text
-	.align	2
-#---------------   ---------------#
 	.globl	loadFileDescriptor
 	.ent	loadFileDescriptor
-#---------------   ---------------#
 loadFileDescriptor:
-	.frame	$fp,48,ra		# vars= 8, regs= 3/0, args= 16, extra= 8
-	.mask	0xd0000000,-8
-	.fmask	0x00000000,0
+	.frame	$fp,48,ra
 	.set	noreorder
 	.cpload	t9
 	.set	reorder
@@ -43,20 +37,26 @@ loadFileDescriptor:
 	sw	gp,32(sp)
 	move	$fp,sp
 	lw	v0,fileOutput
-	bne	v0,zero,$L18
-	la	a0,__sF+176
-	la	a1,$LC0
-	la	t9,fprintf
-	jal	ra,t9
-	li	v0,1			# 0x1
-	sw	v0,24($fp)
-	b	$L17
-$L18:
+	bne	v0,zero,$fileno
+	
+	# Hubo error al querer escribir en el archivo => Mensaje de error. 
+        li      a0,FILE_DESCRIPTOR_STDERR # Cargo en a0 FILE_DESCRIPTOR_STDERR.
+        la      a1,MENSAJE_ERROR_LOAD_FILE
+        li      a2,BYTES_MENSAJE_ERROR_LOAD_FILE # Cargo en a2 la cantidad de bytes a escribir.
+        li      v0, SYS_write
+        syscall # No controlo error porque sale de por si de la funcion por error.
+
+ 	# return ERROR_FILE;
+        li      v0,ERROR_FILE  # Cargo codigo de error, que sera el resultado de la funcion.
+        sw      v0,24($fp)      # Guardo en la direccion 40($fp) el resultado de la funcion.
+
+	b	$returnLoadFile
+$fileno:
 	lw	v0,fileOutput
 	lh	v0,14(v0)
 	sw	v0,ofd
 	sw	zero,24($fp)
-$L17:
+$returnLoadFile:
 	lw	v0,24($fp)
 	move	sp,$fp
 	lw	ra,40(sp)
@@ -65,19 +65,15 @@ $L17:
 	j	ra
 	.end	loadFileDescriptor
 	.size	loadFileDescriptor, .-loadFileDescriptor
-	.rdata
-	.align	2
-$LC1:
-	.ascii	"[Warning] El archivo de output no pudo ser cerrado corre"
-	.ascii	"ctamente.\n\000"
+
+
+# ----------------- closeFile ---------
 	.text
 	.align	2
 	.globl	closeFile
 	.ent	closeFile
 closeFile:
-	.frame	$fp,48,ra		# vars= 8, regs= 3/0, args= 16, extra= 8
-	.mask	0xd0000000,-8
-	.fmask	0x00000000,0
+	.frame	$fp,48,ra
 	.set	noreorder
 	.cpload	t9
 	.set	reorder
@@ -89,26 +85,29 @@ closeFile:
 	move	$fp,sp
 	lw	v1,ofd
 	li	v0,1			# 0x1
-	bne	v1,v0,$L20
+	bne	v1,v0,$IfFileOutputNull
 	sw	zero,fileOutput
-	b	$L19
-$L20:
+	b	$return
+$IfFileOutputNull:
 	lw	v0,fileOutput
-	beq	v0,zero,$L19
-	lw	a0,fileOutput
-	la	t9,fclose
-	jal	ra,t9
-	sw	v0,24($fp)
-	lw	v1,24($fp)
-	li	v0,-1			# 0xffffffffffffffff
-	bne	v1,v0,$L22
-	la	a0,__sF+176
-	la	a1,$LC1
-	la	t9,fprintf
-	jal	ra,t9
-$L22:
+	beq	v0,zero,$return
+	
+	# fileOutput is not NULL
+	lw	a0,ofd   	# a0 = file descriptor
+	li      v0, SYS_close
+        syscall
+
+	beq     a3,zero,$setOutputNull # Si no hubo error, salto a $setOutputNull.
+
+        # Hubo error al querer escribir en el archivo => Mensaje de error. 
+        li      a0,FILE_DESCRIPTOR_STDERR # Cargo en a0 FILE_DESCRIPTOR_STDERR.
+        la      a1,MENSAJE_ERROR_CLOSE_FILE
+        li      a2,BYTES_MENSAJE_ERROR_CLOSE_FILE # Cargo en a2 la cantidad de bytes a escribir.
+        li      v0, SYS_write
+        syscall # No controlo error porque sale de por si de la funcion por error.
+$setOutputNull:
 	sw	zero,fileOutput
-$L19:
+$return:
 	move	sp,$fp
 	lw	ra,40(sp)
 	lw	$fp,36(sp)
@@ -116,24 +115,14 @@ $L19:
 	j	ra
 	.end	closeFile
 	.size	closeFile, .-closeFile
-	.rdata
-	.align	3
-$LC2:
-	.word	0
-	.word	1073741824
-	.text
-	.align	2
-#---------------   ---------------#
-#	.globl	convertIntToCharacter
-#	.ent	convertIntToCharacter
+
+
 #---------------   ---------------#
 	.globl	writeBufferInOFile
 	.ent	writeBufferInOFile
 #---------------   ---------------#
 writeBufferInOFile:
-	.frame	$fp,64,ra		# vars= 24, regs= 3/0, args= 16, extra= 8
-	.mask	0xd0000000,-8
-	.fmask	0x00000000,0
+	.frame	$fp,64,ra
 	.set	noreorder
 	.cpload	t9
 	.set	reorder
@@ -146,44 +135,51 @@ writeBufferInOFile:
 	sw	a0,64($fp)
 	sw	a1,68($fp)
 	lw	v0,fileOutput
-	beq	v0,zero,$L36
+	beq	v0,zero,$return_no_data_to_save
 	lw	v0,68($fp)
-	blez	v0,$L36
-	b	$L35
-$L36:
+	blez	v0,$return_no_data_to_save
+	b	$while_init
+$return_no_data_to_save:
 	sw	zero,40($fp)
-	b	$L34
-$L35:
+	b	$return_write_buffer_in_OFile
+$while_init:
 	li	v0,1			# 0x1
 	sw	v0,24($fp)
 	sw	zero,28($fp)
 	lw	v0,68($fp)
 	sw	v0,32($fp)
-$L37:
+$check_delivery:
 	lw	v1,24($fp)
 	li	v0,1			# 0x1
-	beq	v1,v0,$L39
-	b	$L38
-$L39:
+	beq	v1,v0,$while
+	b	$return_okey
+$while:
 	lw	v1,64($fp)
 	lw	v0,28($fp)
 	addu	v0,v1,v0
-	lw	a0,ofd
-	move	a1,v0
-	lw	a2,32($fp)
-	la	t9,write
-	jal	ra,t9
+
+	lw	a0,ofd          # a0 = output file descriptor
+	move	a1,v0       	# a1 = v0 = bufferToLoad + bytesWriteAcum
+	lw	a2,32($fp)      # a2 = bytesToWrite
+	li      v0, SYS_write
+        syscall  # Seria int bytesWrite = write(ofd, bufferToLoad + bytesWriteAcum, bytesToWrite);
+
+	beq     a3,zero,$save_bytes_write # Si no hubo error, salto a $save_bytes_write.
+
+	# Hubo error al querer escribir en el archivo => Mensaje de error. 
+        li      a0,FILE_DESCRIPTOR_STDERR # Cargo en a0 FILE_DESCRIPTOR_STDERR.
+        la      a1,MENSAJE_ERROR_WRITE
+        li      a2,BYTES_MENSAJE_ERROR_WRITE # Cargo en a2 la cantidad de bytes a escribir.
+        li      v0, SYS_write
+        syscall # No controlo error porque sale de por si de la funcion por error.
+
+        # return ERROR_WRITE;
+        li      v0,ERROR_WRITE  # Cargo codigo de error, que sera el resultado de la funcion.
+        sw      v0,40($fp)      # Guardo en la direccion 40($fp) el resultado de la funcion.
+        b       $return_write_buffer_in_OFile
+
+$save_bytes_write:
 	sw	v0,36($fp)
-	lw	v0,36($fp)
-	bgez	v0,$L40
-	la	a0,__sF+176
-	la	a1,$LC3
-	la	t9,fprintf
-	jal	ra,t9
-	li	v0,3			# 0x3
-	sw	v0,40($fp)
-	b	$L34
-$L40:
 	lw	v1,28($fp)
 	lw	v0,36($fp)
 	addu	v0,v1,v0
@@ -193,12 +189,12 @@ $L40:
 	subu	v0,v1,v0
 	sw	v0,32($fp)
 	lw	v0,32($fp)
-	bgtz	v0,$L37
+	bgtz	v0,$check_delivery
 	sw	zero,24($fp)
-	b	$L37
-$L38:
+	b	$check_delivery
+$return_okey:
 	sw	zero,40($fp)
-$L34:
+$return_write_buffer_in_OFile:
 	lw	v0,40($fp)
 	move	sp,$fp
 	lw	ra,56(sp)
@@ -208,22 +204,14 @@ $L34:
 	.end	writeBufferInOFile
 	.size	writeBufferInOFile, .-writeBufferInOFile
 	.align	2
-#---------------   ---------------#
-#	.globl	writeHeader
-#	.ent	writeHeader
-#---------------   ---------------#
-#writeHeader:
-#---------------   ---------------#
-#	.globl	loadDataInBuffer
-#	.ent	loadDataInBuffer
-#---------------   ---------------#
+
+	.text
+	.align  2
 	.globl	putch
 	.ent	putch
 #---------------   ---------------#
 putch:
-	.frame	$fp,56,ra		# vars= 16, regs= 3/0, args= 16, extra= 8
-	.mask	0xd0000000,-8
-	.fmask	0x00000000,0
+	.frame	$fp,56,ra
 	.set	noreorder
 	.cpload	t9
 	.set	reorder
@@ -237,32 +225,32 @@ putch:
 	sb	v0,24($fp)
 	lw	v0,quantityCharactersInBuffer
 	slt	v0,v0,100
-	beq	v0,zero,$L58
+	beq	v0,zero,$writeBuffer
 	lb	v0,24($fp)
 	move	a0,v0
 	la	t9,loadDataInBuffer
 	jal	ra,t9
 	sw	zero,32($fp)
-	b	$L57
-$L58:
+	b	$returnPutch
+$writeBuffer:
 	la	a0,buffer
 	lw	a1,quantityCharactersInBuffer
 	la	t9,writeBufferInOFile
 	jal	ra,t9
 	sw	v0,28($fp)
 	lw	v0,28($fp)
-	beq	v0,zero,$L59
+	beq	v0,zero,$exeLoadData
 	lw	v0,28($fp)
 	sw	v0,32($fp)
-	b	$L57
-$L59:
+	b	$returnPutch
+$exeLoadData:
 	sw	zero,quantityCharactersInBuffer
 	lb	v0,24($fp)
 	move	a0,v0
 	la	t9,loadDataInBuffer
 	jal	ra,t9
 	sw	zero,32($fp)
-$L57:
+$returnPutch:
 	lw	v0,32($fp)
 	move	sp,$fp
 	lw	ra,48(sp)
@@ -271,15 +259,16 @@ $L57:
 	j	ra
 	.end	putch
 	.size	putch, .-putch
-	.align	2
+
 #---------------   ---------------#
+
+	.text
+	.align	2
+
 	.globl	flush
 	.ent	flush
-#---------------   ---------------#
 flush:
-	.frame	$fp,48,ra		# vars= 8, regs= 3/0, args= 16, extra= 8
-	.mask	0xd0000000,-8
-	.fmask	0x00000000,0
+	.frame	$fp,48,ra
 	.set	noreorder
 	.cpload	t9
 	.set	reorder
@@ -290,16 +279,16 @@ flush:
 	sw	gp,32(sp)
 	move	$fp,sp
 	lw	v0,quantityCharactersInBuffer
-	blez	v0,$L61
+	blez	v0,$returnOK
 	la	a0,buffer
 	lw	a1,quantityCharactersInBuffer
 	la	t9,writeBufferInOFile
 	jal	ra,t9
 	sw	v0,24($fp)
-	b	$L60
-$L61:
+	b	$returnFlush
+$returnOK:
 	sw	zero,24($fp)
-$L60:
+$returnFlush:
 	lw	v0,24($fp)
 	move	sp,$fp
 	lw	ra,40(sp)
@@ -309,17 +298,31 @@ $L60:
 	.end	flush
 	.size	flush, .-flush
 	.align	2
-#---------------   ---------------#
-#	.globl	loadPixelBrightness
-#	.ent	loadPixelBrightness
-#---------------   ---------------#
-#	.globl	mips32_plot
-#	.ent	mips32_plot
-#---------------   ---------------#
+
+#--------------------
 
 	.comm	fileOutput,4
 
 	.comm	ofd,4
 
 	.comm	buffer,100
-	.ident	"GCC: (GNU) 3.3.3 (NetBSD nb3 20040520)"
+
+
+
+## Mensajes de error
+
+	.rdata	
+	
+	.align	2
+
+MENSAJE_ERROR_WRITE:
+	.ascii	"[Error] Hubo un error al escribir en el archivo. \n\000"
+
+MENSAJE_ERROR_CLOSE_FILE:
+	.ascii	"[Warning] El archivo de output no pudo ser cerrado corre"
+	.ascii	"ctamente.\n\000"
+
+MENSAJE_ERROR_LOAD_FILE:
+	.ascii	"[Error] No se ha especificado archivo de salida.\n\000"
+
+
