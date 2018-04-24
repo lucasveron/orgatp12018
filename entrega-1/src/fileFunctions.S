@@ -54,9 +54,9 @@ return_no_data_to_save:
 	b	return_write_buffer_in_OFile
 while_init:
 	
-	# int completeDelivery = FALSE;
-	li	v0,FALSE	# pone un 0 en v0
-	sw	v0,24($fp)      # stack(24) = FALSE = 0 = completeDelivery
+	# int completeDelivery = 1;
+	li	v0,1		# pone un 1 en v0
+	sw	v0,24($fp)      # stack(24) = 1 = completeDelivery
 
 	# int bytesWriteAcum = 0;
 	sw	zero,28($fp)    # stack(28) = bytesWriteAcum = 0
@@ -67,7 +67,7 @@ while_init:
 check_delivery:	
 	# (completeDelivery == FALSE) ?
 	lw	v1,24($fp)      # v1 = stack(24) = completeDelivery
-	li	v0,FALSE	# v0 = FALSE
+	li	v0,1		# v0 = 1
 	beq	v1,v0,while	# if v1 == v0 salta a <while>
 	b	return_okey       # sino salta a <return_okey>
 while:
@@ -119,8 +119,7 @@ save_bytes_write:
 	bgtz    v0,check_delivery # branch si bytesToWrite > 0
 
 	# bytesToWrite is <= 0
-	li 	v0,TRUE
-	sw	v0,24($fp)    # stack(24) = completeDelivery = TRUE
+	sw	zero,24($fp)    # stack(24) = completeDelivery = TRUE
 	b	check_delivery  # branch <check_delivery>
 return_okey:
 	sw	zero,40($fp)    # 0 = OKEY
