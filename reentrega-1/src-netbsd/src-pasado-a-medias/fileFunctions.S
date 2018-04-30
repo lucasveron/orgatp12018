@@ -23,26 +23,38 @@ quantityCharactersInBuffer:
 	.globl	initFile
 	.ent	initFile
 initFile:
-	.frame	$fp,16,ra		# vars= 0, regs= 2/0, args= 0, extra= 8
-	.mask	0x50000000,-4
-	.fmask	0x00000000,0
-	.set	noreorder
+	.frame	$fp,16,ra		
+        .set	noreorder
 	.cpload	t9
 	.set	reorder
-	subu	sp,sp,16
+
+	# Stack frame creation
+        subu	sp,sp,16
+
 	.cprestore 0
 	sw	$fp,12(sp)
 	sw	gp,8(sp)
-	move	$fp,sp
+	
+        # A partir de aca uso $fp en lugar de sp
+        move	$fp,sp
+
+	# Guardo a0 en la direccion $fp(16)
 	sw	a0,16($fp)
-	lw	v0,16($fp)
-	sw	v0,fileOutput
+	lw	v0,16($fp)       #leo la variable guardad en $fp(16), que es a0
+	sw	v0,fileOutput    #Guardo a0 en la variable fileOutput (FileOutput = file)
+
+
 	move	sp,$fp
 	lw	$fp,12(sp)
+        
+        # Destruyo el stackframe	
 	addu	sp,sp,16
+
+        # Vuelvo a la funcion que me invoco
 	j	ra
+
 	.end	initFile
-	.size	initFile, .-initFile
+	
 	.rdata
 	.align	2
 $LC0:
