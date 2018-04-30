@@ -40,7 +40,7 @@ initFile:
 
 	# Guardo a0 en la direccion $fp(16)
 	sw	a0,16($fp)
-	lw	v0,16($fp)       #leo la variable guardad en $fp(16), que es a0
+	lw	v0,16($fp)       #leo la variable guardada en $fp(16), que es a0
 	sw	v0,fileOutput    #Guardo a0 en la variable fileOutput (FileOutput = file)
 
 
@@ -114,61 +114,80 @@ $returnLoadFile:
 	addu	sp,sp,48       # Rompe el stack frame.
 	j	ra             # Regresa a la funcion llamante.
 	.end	loadFileDescriptor
-	.size	loadFileDescriptor, .-loadFileDescriptor
+#--------------- end loadFileDescriptor ---------------#
 
-#---------------  closeFile  ---------------#
+#--------------- begin closeFile ----------------------#
 
 	.text
 	.align	2
 	.globl	closeFile
 	.ent	closeFile
 closeFile:
-	.frame	$fp,48,ra		# vars= 8, regs= 3/0, args= 16, extra= 8
-	.mask	0xd0000000,-8
-	.fmask	0x00000000,0
+	.frame	$fp,48,ra
 	.set	noreorder
 	.cpload	t9
 	.set	reorder
+
+        # creacion del stack frame
 	subu	sp,sp,48
 	.cprestore 16
+        
 	sw	ra,40(sp)
 	sw	$fp,36(sp)
 	sw	gp,32(sp)
+
+        # de aqui al fin de la funcion uso $fp en lugar de sp.
 	move	$fp,sp
+        # carga en v1 el ofd
 	lw	v1,ofd
-	li	v0,1			# 0x1
-	bne	v1,v0,$L21
+        # carga en v0 1
+	li	v0,1
+        # if (ofd == 0) salto a  IfFileOutputNull
+	bne	v1,v0,$IfFileOutputNull
 	sw	zero,fileOutput
-	b	$L20
-$L21:
-	lw	v0,fileOutput
-	beq	v0,zero,$L20
-	lw	a0,fileOutput
-	la	t9,fclose
-	jal	ra,t9
-	sw	v0,24($fp)
-	lw	v1,24($fp)
-	li	v0,-1			# 0xffffffffffffffff
-	bne	v1,v0,$L23
-	la	a0,__sF+176
-	la	a1,MENSAJE_ERROR_CLOSE_FILE
-	la	t9,fprintf
-	jal	ra,t9
-$L23:
-	sw	zero,fileOutput
-$L20:
-	move	sp,$fp
-	lw	ra,40(sp)
-	lw	$fp,36(sp)
-	addu	sp,sp,48
-	j	ra
+	b	$returnCloseFile
+$IfFileOutputNull:
+	lw	v0,fileOutput  # cargo en v0 fileOutput
+        # if (fileOutput == NULL) return funcion closeFile
+	beq	v0,zero,$returnCloseFile
+        # Sino (fileOutput != NULL ) continuo
+        
+	#lw	a0,fileOutput  # cargo en a0 fileOutput
+	#la	t9,fclose
+	#jal	ra,t9
+	#sw	v0,24($fp)
+	#lw	v1,24($fp)
+	#li	v0,-1
+	#bne	v1,v0,$setOutputNull
+	#la	a0,__sF+176
+	#la	a1,MENSAJE_ERROR_CLOSE_FILE
+	#la	t9,fprintf
+	#jal	ra,t9
+        
+        lw	a0,ofd   	# a0 = file descriptor
+        li      v0, SYS_close
+        syscall
+        
+        beq     a3,zero,$setOutputNull # Si no hubo error, salto a $setOutputNull.
+    
+        # hubo error al querer escribir en el archivo => Mensaje de error. 
+        li      a0,FILE_DESCRIPTOR_STDERR # Cargo en a0 FILE_DESCRIPTOR_STDERR.
+        la      a1,MENSAJE_ERROR_CLOSE_FILE
+        li      a2,BYTES_MENSAJE_ERROR_CLOSE_FILE # Cargo en a2 la cantidad de bytes a escribir.
+        li      v0, SYS_write
+        syscall # No controlo error porque sale de por si de la funcion por error.
+
+$setOutputNull:
+	sw	zero,fileOutput # Pongo un 0 en la dirección del fileOutput
+$returnCloseFile:
+	move	sp,$fp     # Iguala sp con fp.
+	lw	ra,40(sp)  # Carga en ra stack[40] para retornar a la funcion llamante.
+	lw	$fp,36(sp) # Carga en fp stack[36]. ???
+	addu	sp,sp,48   # Rompe el stack frame.
+	j	ra         # Regresa a la funcion llamante.
 	.end	closeFile
-	.size	closeFile, .-closeFile
+#--------------- end closeFile ---------------#
 	.rdata
-	.align	2
-$LC2:
-	.ascii	"[Error] Hubo un error al escribir en el archivo. \n\000"
-	.text
 	.align	2
 	.globl	writeBufferInOFile
 	.ent	writeBufferInOFile
