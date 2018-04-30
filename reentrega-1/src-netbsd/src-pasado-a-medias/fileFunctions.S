@@ -1,11 +1,15 @@
 #include <mips/regdef.h>
 #include <sys/syscall.h>
 
+#include "constants.h"
 
-#	#.file	1 "fileFunctions.c"
-#	#.section .mdebug.abi32
-#	#.previous
-#	#.abicalls
+# Size mensajes
+#define BYTES_MENSAJE_ERROR_WRITE   52
+#define BYTES_MENSAJE_ERROR_CLOSE_FILE   68
+#define BYTES_MENSAJE_ERROR_LOAD_FILE   51
+
+#define FILE_DESCRIPTOR_STDERR   2
+
 	.globl	quantityCharactersInBuffer
 	.globl	quantityCharactersInBuffer
 	.section	.bss
@@ -45,49 +49,63 @@ $LC0:
 	.ascii	"[Error] No se ha especificado archivo de salida.\n\000"
 	.text
 	.align	2
+
+#---------------  loadFileDescriptor  ---------------#
+
 	.globl	loadFileDescriptor
 	.ent	loadFileDescriptor
 loadFileDescriptor:
-	.frame	$fp,48,ra		# vars= 8, regs= 3/0, args= 16, extra= 8
-	.mask	0xd0000000,-8
-	.fmask	0x00000000,0
+	.frame	$fp,48,ra     # reservo espacio para el stack frame de 48 bytes
 	.set	noreorder
 	.cpload	t9
 	.set	reorder
+        
+        # creacion del stack frame
 	subu	sp,sp,48
 	.cprestore 16
 	sw	ra,40(sp)
 	sw	$fp,36(sp)
 	sw	gp,32(sp)
+
+        # de aqui al fin de la funcion uso $fp en lugar de sp.
 	move	$fp,sp
+        
+        # cargo en v0 la direccion del fileOutput.
 	lw	v0,fileOutput
-	bne	v0,zero,$L19
-	la	a0,__sF+176
-	la	a1,$LC0
-	la	t9,fprintf
-	jal	ra,t9
-	li	v0,1			# 0x1
-	sw	v0,24($fp)
-	b	$L18
-$L19:
-	lw	v0,fileOutput
-	lh	v0,14(v0)
-	sw	v0,ofd
-	sw	zero,24($fp)
-$L18:
-	lw	v0,24($fp)
-	move	sp,$fp
-	lw	ra,40(sp)
-	lw	$fp,36(sp)
-	addu	sp,sp,48
-	j	ra
+        # if (fileOutput != NULL) brancheo
+	bne	v0,zero,$fileno
+        # if (fileOutput == NULL) continuo.
+        # Hubo error al querer escribir en el archivo => Mensaje de error.
+	#la	a0,__sF+176
+	#la	a1,$LC0
+	#la	t9,fprintf
+	#jal	ra,t9
+        li a0,FILE_DESCRIPTOR_STDERR          # Cargo en a0 el FILE_DESCRIPTOR_STDERR = 2.
+        la a1,MENSAJE_ERROR_LOAD_FILE         # Cargo en 01 el mensaje de error.
+        li a2,BYTES_MENSAJE_ERROR_LOAD_FILE   # Cargo en a2 la cantidad de byes a escribir.
+        syscall     # No controlo error porque sale de por si de la funcion por error.
+
+	# return ERROR_FILE
+        li      v0,ERROR_FILE  # Cargo codigo de error, que sera el resultado de la funcion.
+	sw	v0,24($fp)     # Guardo en la direccion 24($fp) el resultado de la funcion.
+	b	$returnLoadFile
+$fileno:
+	lw	v0,fileOutput  # Carga en v0 el valor de fileOutput.
+	lh	v0,14(v0)      # ???
+	sw	v0,ofd         # Guarda el valor del registro v0 en la direccion de ofd.
+	sw	zero,24($fp)   # Guarda un 0 en stack[24].
+$returnLoadFile:
+	lw	v0,24($fp)     # Cargo en v0 el contenido del stack[24] = ERROR_FILE
+	move	sp,$fp         # Iguala sp con fp.
+	lw	ra,40(sp)      # Carga en ra stack[40] para retornar a la funcion llamante.
+	lw	$fp,36(sp)     # Carga en fp stack[36]. ???
+	addu	sp,sp,48       # Rompe el stack frame.
+	j	ra             # Regresa a la funcion llamante.
 	.end	loadFileDescriptor
 	.size	loadFileDescriptor, .-loadFileDescriptor
-	.rdata
-	.align	2
-$LC1:
-	.ascii	"[Warning] El archivo de output no pudo ser cerrado corre"
-	.ascii	"ctamente.\n\000"
+
+#---------------  closeFile  ---------------#
+
 	.text
 	.align	2
 	.globl	closeFile
@@ -121,7 +139,7 @@ $L21:
 	li	v0,-1			# 0xffffffffffffffff
 	bne	v1,v0,$L23
 	la	a0,__sF+176
-	la	a1,$LC1
+	la	a1,MENSAJE_ERROR_CLOSE_FILE
 	la	t9,fprintf
 	jal	ra,t9
 $L23:
@@ -524,4 +542,21 @@ $L38:
 	.comm	ofd,4
 
 	.comm	buffer,100
-	.ident	"GCC: (GNU) 3.3.3 (NetBSD nb3 20040520)"
+
+
+
+## Mensajes de error
+
+	.rdata	
+	
+	.align	2
+
+MENSAJE_ERROR_WRITE:
+	.ascii	"[Error] Hubo un error al escribir en el archivo. \n\000"
+
+MENSAJE_ERROR_CLOSE_FILE:
+	.ascii	"[Warning] El archivo de output no pudo ser cerrado corre"
+	.ascii	"ctamente.\n\000"
+
+MENSAJE_ERROR_LOAD_FILE:
+	.ascii	"[Error] No se ha especificado archivo de salida.\n\000"
