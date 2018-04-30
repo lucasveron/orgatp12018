@@ -40,7 +40,7 @@ initFile:
 
 	# Guardo a0 en la direccion $fp(16)
 	sw	a0,16($fp)
-	lw	v0,16($fp)       #leo la variable guardada en $fp(16), que es a0
+	lw	v0,16($fp)       #Cargo en v0 la posicion [16], v0 =a0
 	sw	v0,fileOutput    #Guardo a0 en la variable fileOutput (FileOutput = file)
 
 
@@ -58,7 +58,7 @@ initFile:
 	.rdata
 	.align	2
 $LC0:
-	.ascii	"[Error] No se ha especificado archivo de salida.\n\000"
+	MENSAJE_ERROR_LOAD_FILE    #Llamo a la etiqueta MENSAJE_ERROR_LOAD_FILE
 	.text
 	.align	2
 
