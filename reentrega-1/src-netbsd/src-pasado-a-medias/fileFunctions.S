@@ -187,6 +187,7 @@ $returnCloseFile:
 	j	ra         # Regresa a la funcion llamante.
 	.end	closeFile
 #--------------- end closeFile ---------------#
+
 	.rdata
 	.align	2
 	.globl	writeBufferInOFile
@@ -268,37 +269,58 @@ $L24:
 	j	ra
 	.end	writeBufferInOFile
 	.size	writeBufferInOFile, .-writeBufferInOFile
+
+#--------------- begin loadDataInBuffer ---------------#
 	.align	2
 	.globl	loadDataInBuffer
 	.ent	loadDataInBuffer
 loadDataInBuffer:
-	.frame	$fp,24,ra		# vars= 8, regs= 2/0, args= 0, extra= 8
-	.mask	0x50000000,-4
-	.fmask	0x00000000,0
+	.frame	$fp,24,ra
 	.set	noreorder
 	.cpload	t9
 	.set	reorder
+
+        # creacion de stack frame
 	subu	sp,sp,24
+
 	.cprestore 0
 	sw	$fp,20(sp)
 	sw	gp,16(sp)
+
+        # de aqui al fin de la funcion uso $fp en lugar de sp.
 	move	$fp,sp
-	move	v0,a0
-	sb	v0,8($fp)
-	lw	v1,quantityCharactersInBuffer
+
+        # Parametro
+	#void loadDataInBuffer(char character)
+        move	v0,a0      # muevo el parametro character, que se encuentra en a0, a v0.
+	sb	v0,8($fp)  # guardo en la direccion 8($fp), el contenido de v0, que es character.
+	
+        # buffer[quantityCharactersInBuffer] = character;
+        # cargo en v1 la cantidad de caracteres que me voy a mover sobre buffer.
+        lw	v1,quantityCharactersInBuffer
+        #cargo la direccion de inicio de buffer.
 	la	v0,buffer
+        # guardo en v1 la nueva direccion sobre la variable buffer.
 	addu	v1,v1,v0
+        # cargo en v0 el valor de character (un byte), que esta en la dir 8($fp).
 	lbu	v0,8($fp)
+        # guardo en buffer+quantityCharactersInBuffer character
 	sb	v0,0(v1)
+
+        # quantityCharactersInBuffer++;
 	lw	v0,quantityCharactersInBuffer
 	addu	v0,v0,1
 	sw	v0,quantityCharactersInBuffer
+        
 	move	sp,$fp
 	lw	$fp,20(sp)
+        # destruyo stack frame
 	addu	sp,sp,24
+        # vuelvo el control a funcion llamante
 	j	ra
 	.end	loadDataInBuffer
-	.size	loadDataInBuffer, .-loadDataInBuffer
+#--------------- end loadDataInBuffer ---------------#
+
 	.align	2
 	.globl	putch
 	.ent	putch
