@@ -389,10 +389,9 @@ $returnInConvertIntToCh:
 
 ## Variables auxiliares
 
-	.rdata
-	.align	2
-twodouble:
-	.double	2
+	.data
 
+twoDouble:
+	.double	2
 
 
