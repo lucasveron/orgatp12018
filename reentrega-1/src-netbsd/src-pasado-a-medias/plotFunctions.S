@@ -48,17 +48,18 @@ loadPixelBrightness:
 	#	Entonces reservo 11 bytes (10 numeros + 1 signo, si es negativo). #
 	###########################################################################
 
-
-	addu	a0,$fp,24
-	lw	a1,72($fp)
-
+	
 	# character ch = convertIntToCharacter(pixelBrightness);
-	#lw	a0,72($fp)	# Cargo en a0, la variable pixelBrightness, guardada en la direccion
-				# 72($fp), que seria el parametro de la funcion.
+	addu	a0,$fp,24	# Cargo en a0 la direccion en donde espero que se guarde
+				# el struct retornado por la funcion convertIntToCharacter.
+				# Es el primer parametro que espera esta funcion.
+	lw	a1,72($fp)	# Cargo en a0, la variable pixelBrightness, guardada en la direccion
+				# 72($fp), que seria el segundo parametro de la funcion.
 	la	t9,convertIntToCharacter # Cargo en t9, la direccion de la funcion convertIntToCharacter.
 	jal	ra,t9		# Invoco la funcion, salto a convertIntToCharacter.
-	#sw	v0,25($fp)	# TODO VER SI ESTO ESTA BIEN, XQ LO AGREGUE YO
-				# Guardo en la direccion 36($fp), el valor retornado por la funcion.
+				# No guardo el valor retornado por la funcion y cargado en v0, porque
+				# en el primer parametro especifique la direccion en donde esperaba
+				# el struct retornado.
 	
 	# int rdo = OKEY;
 	sw	zero,40($fp)	# OKEY = 0
