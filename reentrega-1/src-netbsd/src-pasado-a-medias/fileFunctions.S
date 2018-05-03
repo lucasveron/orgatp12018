@@ -57,10 +57,6 @@ initFile:
 	
 	.rdata
 	.align	2
-$LC0:
-	MENSAJE_ERROR_LOAD_FILE    #Llamo a la etiqueta MENSAJE_ERROR_LOAD_FILE
-	.text
-	.align	2
 
 #---------------  loadFileDescriptor  ---------------#
 
@@ -89,7 +85,7 @@ loadFileDescriptor:
         # if (fileOutput == NULL) continuo.
         # Hubo error al querer escribir en el archivo => Mensaje de error.
 	#la	a0,__sF+176
-	#la	a1,$LC0
+	#la	a1,MENSAJE_ERROR_LOAD_FILE
 	#la	t9,fprintf
 	#jal	ra,t9
         li a0,FILE_DESCRIPTOR_STDERR          # Cargo en a0 el FILE_DESCRIPTOR_STDERR = 2.
@@ -191,11 +187,6 @@ $returnCloseFile:
 	.rdata
 	.align	2
 	
-$LC2:
-    MENSAJE_ERROR_WRITE  #Llamo a la etiqueta MENSAJE_ERROR_WRITE
-	.text
-	.align	2
-	
 #--------- BEGIN writeBufferInOFile -----#
 	.globl	writeBufferInOFile
 	.ent	writeBufferInOFile
@@ -250,7 +241,7 @@ $mainWhile:
         lw	v0,36($fp) #Cargo la direccion [36] del stack frame en v0
         bgez	v0,$continuacionCicloWhile #if (bytesWrite <0)  , si es >= 0 llama a la funcion $L30
 	la	a0,__sF+176
-	la	a1,$LC2
+	la	a1,MENSAJE_ERROR_WRITE
 	la	t9,fprintf
 	jal	ra,t9
 	li	v0,3			# 0x3
