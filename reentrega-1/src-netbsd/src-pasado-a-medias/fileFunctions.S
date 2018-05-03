@@ -189,6 +189,13 @@ $returnCloseFile:
 #--------------- end closeFile ---------------#
 	.rdata
 	.align	2
+	
+$LC2:
+    MENSAJE_ERROR_WRITE  #Llamo a la etiqueta MENSAJE_ERROR_WRITE
+	.text
+	.align	2
+	
+#--------- BEGIN writeBufferInOFile -----#
 	.globl	writeBufferInOFile
 	.ent	writeBufferInOFile
 writeBufferInOFile:
