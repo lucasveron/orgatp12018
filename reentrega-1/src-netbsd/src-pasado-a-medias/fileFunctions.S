@@ -235,18 +235,22 @@ $mainWhile:
 	lw	a0,ofd #Cargo ofd en a0. a0 = ofd
 	move a1,v0 #Cargo direccion de v0 en a1= buffertoLoad + bytesWriteAcum
 	lw	a2,32($fp) #Cargo en a2 la direccion [32] del Stack frame. a2 = bytesWriteAcum
-        la	t9,write  #????????
-	jal	ra,t9
-        sw	v0,36($fp) #Guardo v0 en la direccion [36] del stack frame. v0 = bytesWrite
-        lw	v0,36($fp) #Cargo la direccion [36] del stack frame en v0
-        bgez	v0,$continuacionCicloWhile #if (bytesWrite <0)  , si es >= 0 llama a la funcion $L30
-	la	a0,__sF+176
-	la	a1,MENSAJE_ERROR_WRITE
-	la	t9,fprintf
-	jal	ra,t9
-	li	v0,3			# 0x3
-	sw	v0,40($fp)
-	b	$returnWriteBufferInOFile
+       	li  v0, SYS_write
+   	syscall  # Seria int bytesWrite = write(ofd, bufferToLoad + bytesWriteAcum, bytesToWrite);
+    	sw v0 ,36($fp)
+	beq     a3,zero,$continuacionCicloWhile # El registro a3, devuelve 0/1 success/error
+    
+    	# Hubo error al querer escribir en el archivo => Mensaje de error. 
+    	li      a0,FILE_DESCRIPTOR_STDERR # Cargo en a0 FILE_DESCRIPTOR_STDERR.
+    	la      a1,MENSAJE_ERROR_WRITE
+    	li      a2,BYTES_MENSAJE_ERROR_WRITE # Cargo en a2 la cantidad de bytes a escribir.
+    	li      v0, SYS_write
+    	syscall # No controlo error porque sale de por si de la funcion por error.
+
+    	# return ERROR_WRITE;
+    	li  v0,ERROR_WRITE  # Cargo codigo de error, que sera el resultado de la funcion.
+    	sw  v0,40($fp)      # Guardo en la direccion 40($fp) el resultado de la funcion.
+    	b  $returnWriteBufferInOFile
 $continuacionCicloWhile:
         lw	v1,28($fp) #Cargo en v1 la direccion [28] del stack frame, v1= zero
         lw	v0,36($fp) #Cargo en v0 la direccion [36] del stack frame, v0=bytesWrite
@@ -330,92 +334,99 @@ loadDataInBuffer:
 	.globl	putch
 	.ent	putch
 putch:
-	.frame	$fp,56,ra		# vars= 16, regs= 3/0, args= 16, extra= 8
-	.mask	0xd0000000,-8
-	.fmask	0x00000000,0
+	.frame	$fp,56,ra	# reservo espacio para el stack frame de 56 bytes
+	
 	.set	noreorder
 	.cpload	t9
 	.set	reorder
+	
+	# creacion del stack frame
 	subu	sp,sp,56
 	.cprestore 16
 	sw	ra,48(sp)
 	sw	$fp,44(sp)
 	sw	gp,40(sp)
+
+	#A partir de aqui uso fp para moverme en lugar de sp
 	move	$fp,sp
-	move	v0,a0
-	sb	v0,24($fp)
-	lw	v0,quantityCharactersInBuffer
-	slt	v0,v0,100
-	beq	v0,zero,$L34
-	lb	v0,24($fp)
-	move	a0,v0
-	la	t9,loadDataInBuffer
-	jal	ra,t9
-	sw	zero,32($fp)
-	b	$L33
-$L34:
-	la	a0,buffer
-	lw	a1,quantityCharactersInBuffer
-	la	t9,writeBufferInOFile
-	jal	ra,t9
-	sw	v0,28($fp)
-	lw	v0,28($fp)
-	beq	v0,zero,$L35
-	lw	v0,28($fp)
-	sw	v0,32($fp)
-	b	$L33
-$L35:
-	sw	zero,quantityCharactersInBuffer
-	lb	v0,24($fp)
-	move	a0,v0
-	la	t9,loadDataInBuffer
-	jal	ra,t9
-	sw	zero,32($fp)
-$L33:
-	lw	v0,32($fp)
-	move	sp,$fp
-	lw	ra,48(sp)
-	lw	$fp,44(sp)
-	addu	sp,sp,56
-	j	ra
-	.end	putch
-	.size	putch, .-putch
-	.align	2
-	.globl	flush
-	.ent	flush
+
+	move	v0,a0  #cargo en v0 el valor del registro a0, v0=character
+	sb	v0,24($fp) # Guardo v0= character en poiscion [24] del StackFrame
+	lw	v0,quantityCharactersInBuffer #Cargo en v0= quantityCharactersInBuffer
+	slt	v0,v0,100  # if (quantityCharactersInBuffer < MAX_BUFFER), cargo , devuelve 0/1 en false/True
+	beq	v0,zero,$ifQuantityGreatEqualMaxBuffer # False , v0=0  llama a al funcion $L34
+	lb	v0,24($fp) #Cargo en v0 posicion [24] del stack frame, v0=character
+	move	a0,v0 #Cargo en a0 la posicion del v0,
+	la	t9,loadDataInBuffer #Cargo la etiqueta a la funcion loadDataInBuffer en el registro t9
+	jal	ra,t9 #Llamo a la funcion loadDataInBuffer y guardo la direccion en el return address / loadDataInBuffer(character);
+	sw	zero,32($fp) #Guardo zero en la posicion [32] del stack frame 
+	b	$exitPutch. #Salto a funcion $L33
+$ifQuantityGreatEqualMaxBuffer:
+	la	a0,buffer #Cargo address buffer en a0,  ao= buffer
+	lw	a1,quantityCharactersInBuffer  #Cargo quantityCharactersInBuffer word  en a1=quantityCharactersInBuffer
+	la	t9,writeBufferInOFile #Cargo direccion de la funcion writeBufferInOFile en t9
+	jal	ra,t9 #Llamo a la funcion , y guardo la direccion de retorno a esta funcion
+	sw	v0,28($fp) #Guardo el return de la function en la posicion [28] del stack frame 
+	lw	v0,28($fp) #Cargola posicion [28] del stack frame en v0 = rdo
+ 	beq	v0,zero,$executionLoadData #if (rdo != OKEY) , if false, llama a $executionLoadData
+        lw	v0,28($fp) #Cargo la posicion [28] del stack frame en v0 =rdo
+        sw	v0,32($fp) #Guardo v0=rdo en la posicion [32] del stack frame
+        b	$exitPutch #Salgo de la funcion
+$executionLoadData:
+        sw	zero,quantityCharactersInBuffer #Cargo zero en la word quantityCharactersInBuffer
+        lb	v0,24($fp) #Cargo la poiscion [24] del stack frame en v0=character
+        move	a0,v0 #Cargo en a0 la posicion de v0
+        la	t9,loadDataInBuffer #Cargo la direccion de loadDataInBuffer en t9
+        jal	ra,t9 #Llamo a la funcion loadDataInBuffer y guardo la direccion en el return address /  loadDataInBuffer(character);
+        sw	zero,32($fp) #Cargo zero en la posicion [32] del stackFrame
+$exitPutch:
+        lw	v0,32($fp) #Cargo la posocion [32] del stack frame en v0=rdo
+        #Destruccion stack frame
+        move	sp,$fp
+        lw	ra,48(sp)
+        lw	$fp,44(sp)
+        addu	sp,sp,56
+        j	ra
+        .end	putch
+        .align	2
+        .globl	flush
+        .ent	flush
+
 flush:
-	.frame	$fp,48,ra		# vars= 8, regs= 3/0, args= 16, extra= 8
-	.mask	0xd0000000,-8
-	.fmask	0x00000000,0
-	.set	noreorder
-	.cpload	t9
-	.set	reorder
-	subu	sp,sp,48
+    	.frame	$fp,48,ra # reservo espacio para el stack frame de 48 bytes
+    	.set	noreorder
+    	.cpload	t9
+    	.set	reorder
+
+    	# creacion del stack frame
+    	subu	sp,sp,48
 	.cprestore 16
-	sw	ra,40(sp)
-	sw	$fp,36(sp)
-	sw	gp,32(sp)
-	move	$fp,sp
-	lw	v0,quantityCharactersInBuffer
-	blez	v0,$L37
-	la	a0,buffer
-	lw	a1,quantityCharactersInBuffer
-	la	t9,writeBufferInOFile
-	jal	ra,t9
-	sw	v0,24($fp)
-	b	$L36
-$L37:
-	sw	zero,24($fp)
-$L36:
-	lw	v0,24($fp)
-	move	sp,$fp
+    	sw	ra,40(sp)
+    	sw	$fp,36(sp)
+    	sw	gp,32(sp)
+    	#A partir de aqui uso fp para moverme en lugar de sp
+
+    	move	$fp,sp
+
+    	lw	v0,quantityCharactersInBuffer #Cargo en v0= quantityCharactersInBuffer
+    	blez	v0,$L37 # if (quantityCharactersInBuffer > 0) , if v0<=0 llama a
+    	la	a0,buffer #Cargo direccion  buffer en a0
+    	lw	a1,quantityCharactersInBuffer #Cargo word quantityCharactersInBuffer en a1
+    	la	t9,writeBufferInOFile #Cargo etiqueta writeBufferInOFile en t9
+    	jal	ra,t9 #writeBufferInOFile(buffer, quantityCharactersInBuffer)
+    	sw	v0,24($fp) #Cargo v0 = resultado de la funcion en posicion [24] del Stack frame
+    	b	$exitFlush #Llamo a la funcion exitFlush
+$returnZero:
+    	sw	zero,24($fp) #Guarda zero en la posicion [24] del stack frame, valor return por la funcion
+$exitFlush:
+    	lw	v0,24($fp) #Carga la posicion [24] del stack Frame para return
+    	#Destruccion del stack frame
+        move	sp,$fp
 	lw	ra,40(sp)
 	lw	$fp,36(sp)
 	addu	sp,sp,48
 	j	ra
 	.end	flush
-	.size	flush, .-flush
-
 
 ##-----	writeHeader -----##
 
