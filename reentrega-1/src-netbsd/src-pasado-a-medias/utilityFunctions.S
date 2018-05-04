@@ -97,18 +97,19 @@ $whileConvertIntToCh:
 	b	$setLengthInConvertIntToCh	# Salto incondicional a $setLengthInConvertIntToCh.
 $insideOfTheWhileConvertIntToCh:
 	# rest = number % 10;
-	lw	v0,60($fp)	# Cargo en v0 lo guardado en la direccion 60($fp), que seria la variable number.
-	li	v1,10		# Cargo en v1 el inmediato 10.
-
-	# divu   s,t  	
-	# siendo s y t registros      
-	#  lo <— s div t
-        #  hi <— s mod t
-        #  operands are unsigned
-
-	divu	v0,v1		# Hago la division entre number y 10. En el registro v0 quedo el cociente.
-				# Mientras que en v1 quedo el resto.
-	sw	v1,28($fp)	# Guardo el resto de la division (cargado en v1) en la direccion 28($fp),
+	lw	a0,60($fp)	# Cargo en a0 lo guardado en la direccion 60($fp), que seria la variable number.
+	# Cargo en v0 el valor 10.
+	li	v0,-859045888	# 0xffffffffcccc0000
+	ori	v0,v0,0xcccd
+	multu	a0,v0
+	mfhi	v0
+	srl	v1,v0,3
+	move	v0,v1
+	sll	v0,v0,2
+	addu	v0,v0,v1
+	sll	v0,v0,1
+	subu	v0,a0,v0
+	sw	v0,28($fp)	# Guardo el resto de la division (cargado en v0) en la direccion 28($fp),
 				# que representa a la variable rest.
 
 	#################
@@ -138,19 +139,15 @@ $insideOfTheWhileConvertIntToCh:
 	sb	v0,0(v1)	# Guardo el resultado de la conversion en el array data.
 
 	# number /= 10;
-	lw	v1,60($fp)	# Cargo en v0 lo guardado en la direccion 60($fp), que seria la variable number.
-	li	v1,10		# Cargo en v1 el inmediato 10.
-
-	# divu   s,t  	
-	# siendo s y t registros      
-	#  lo <— s div t
-        #  hi <— s mod t
-        #  operands are unsigned
-
-	divu	v0,v1		# Hago la division entre number y 10. En el registro v0 quedo el cociente.
-				# Mientras que en v1 quedo el resto.
+	lw	v1,60($fp)	# Cargo en v1 lo guardado en la direccion 60($fp), que seria la variable number.
+	# Cargo en v0 el valor 10.
+	li	v0,-859045888	# 0xffffffffcccc0000
+	ori	v0,v0,0xcccd
+	multu	v1,v0
+	mfhi	v0
+	srl	v0,v0,3
 	sw	v0,60($fp)	# Actualizo el valor de la variable number. Guardo en la direccion 60($fp),
-				# donde esta number, el cociente de la division por 10.
+				# donde esta number, el cociente de la division por 10.	
 	
 	# i ++;
 	lw	v0,24($fp)	# Cargo en v0 lo guardado en la direccion 24($fp), que seria la variable i.
