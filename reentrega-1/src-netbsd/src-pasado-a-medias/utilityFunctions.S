@@ -327,42 +327,45 @@ $insideOfTheWhileInvestNumberInConvertIntToCh:
 							# direccion OFFSET_LAST_CH_C_I_TO_CH($fp).
 
 	# oneCharacter.data[i] = lastCharacter;
-	lw	v1,24($fp)	# Cargo en v1 lo guardado en la direccion 24($fp), que representa a la 
-				# variable i.
-	addu	v0,$fp,8	# Me muevo 8 posiciones sobre el stack frama (desde la posicion inicial). Cargo
-				# nueva posicion en v0. Esto es para obtener la direccion guardada en la posicion inicial
-				# de oneCharacter.data.
+	lw	v1,OFFSET_I_C_I_TO_CH($fp)	# Cargo en v1 lo guardado en la direccion OFFSET_I_C_I_TO_CH($fp), 
+						# que representa a la variable i.
+	addu	v0,$fp,OFFSET_DATA_C_I_TO_CH	# Me muevo OFFSET_DATA_C_I_TO_CH posiciones sobre el stack frama (desde la 
+						# posicion inicial). Cargo nueva posicion en v0. Esto es para obtener la direccion
+						# guardada en la posicion inicial de oneCharacter.data.
 	addu	v1,v0,v1	# A la direccion guardada en la posicion inicial de oneCharacter.data, le sumo lo que
 				# tiene v1 (que es i); y guardo el resultado en v1. Esto seria:
 				# oneCharacter.data[i] = oneCharacter.data + i
-	lbu	v0,41($fp)	# Cargo en v0 un byte lo guardado en la direccion 41($fp), que seria lastCharacter.
+	lbu	v0,OFFSET_LAST_CH_C_I_TO_CH($fp)	# Cargo en v0 un byte lo guardado en la direccion 
+							# OFFSET_LAST_CH_C_I_TO_CH($fp), que seria lastCharacter.
 	sb	v0,0(v1)	# Guardo un byte en la direccion apuntada por v1. O sea, hago efectivamente:
 				# oneCharacter.data[i] = lastCharacter;
 
 	# oneCharacter.data[last] = firstCharacter;
-	lw	v1,28($fp)	# Cargo en v1 lo guardado en la direccion 28($fp), que representa a la 
-				# variable last.
-	addu	v0,$fp,8	# Me muevo 8 posiciones sobre el stack frama (desde la posicion inicial). Cargo
-				# nueva posicion en v0. Esto es para obtener la direccion guardada en la posicion inicial
-				# de oneCharacter.data.
+	lw	v1,OFFSET_LAST_C_I_TO_CH($fp)	# Cargo en v1 lo guardado en la direccion OFFSET_LAST_C_I_TO_CH($fp),
+						# que representa a la variable last.
+	addu	v0,$fp,OFFSET_DATA_C_I_TO_CH	# Me muevo OFFSET_DATA_C_I_TO_CH posiciones sobre el stack frama (desde
+						# la posicion inicial). Cargo nueva posicion en v0. Esto es para obtener
+						# la direccion guardada en la posicion inicial de oneCharacter.data.
 	addu	v1,v0,v1	# A la direccion guardada en la posicion inicial de oneCharacter.data, le sumo lo que
 				# tiene v1 (que es last); y guardo el resultado en v1. Esto seria:
 				# oneCharacter.data[last] = oneCharacter.data + last
-	lbu	v0,40($fp)	# Cargo en v0 un byte lo guardado en la direccion 40($fp), que seria firstCharacter.
+	lbu	v0,OFFSET_FIRST_CH_C_I_TO_CH($fp)	# Cargo en v0 un byte lo guardado en la direccion 
+							# OFFSET_FIRST_CH_C_I_TO_CH($fp), que seria firstCharacter.
 	sb	v0,0(v1)	# Guardo un byte en la direccion apuntada por v1. O sea, hago efectivamente:
 				# oneCharacter.data[last] = firstCharacter;
 
 	# i ++;
-	lw	v0,24($fp)	# Cargo en v0 lo guardado en la direccion 24($fp), que representa a la 
-				# variable i.
-	addu	v0,v0,1		# Incremento en 1 el valor de i.
-	sw	v0,24($fp)	# Guardo el nuevo valor de i, que se encuentra en la direccion 24($fp).
+	lw	v0,OFFSET_I_C_I_TO_CH($fp)	# Cargo en v0 lo guardado en la direccion OFFSET_I_C_I_TO_CH($fp),
+						# que representa a la variable i.
+	addu	v0,v0,1				# Incremento en 1 el valor de i.
+	sw	v0,OFFSET_I_C_I_TO_CH($fp)	# Guardo el nuevo valor de i, que se encuentra en la direccion OFFSET_I_C_I_TO_CH($fp).
 
 	# last --;
-	lw	v0,28($fp)	# Cargo en v0 lo guardado en la direccion 28($fp), que representa a la 
-				# variable last.
-	addu	v0,v0,-1	# Decremento en 1 el valor de last.
-	sw	v0,28($fp)	# Guardo el nuevo valor de last, que se encuentra en la direccion 28($fp).
+	lw	v0,OFFSET_LAST_C_I_TO_CH($fp)	# Cargo en v0 lo guardado en la direccion OFFSET_LAST_C_I_TO_CH($fp),
+						# que representa a la variable last.
+	addu	v0,v0,-1			# Decremento en 1 el valor de last.
+	sw	v0,OFFSET_LAST_C_I_TO_CH($fp)	# Guardo el nuevo valor de last, que se encuentra en la direccion 
+						# OFFSET_LAST_C_I_TO_CH($fp).
 
 	b	$whileInvestNumberInConvertIntToCh	# Salto incondicionalmente a 
 							# $whileInvestNumberInConvertIntToCh.
@@ -370,48 +373,49 @@ $whileInvestNumberInConvertIntToChFinalized:
 	# return oneCharacter;
 
 	# Voy a guardar oneCharacter.data que debe de ser retornado.
-	lw	v0,8($fp)	# Cargo en v0 lo guardado en la direccion 8($fp), que representa a la
-				# variable oneCharacter.data.
-	lw	v1,56($fp)	# Cargo en v1 lo guardado en la direccion 56($fp), que representa la
-				# direccion en la cual la funcion invocante espera el resultado de la
-				# ejecucion de esta funcion.
+	lw	v0,OFFSET_DATA_C_I_TO_CH($fp)	# Cargo en v0 lo guardado en la direccion OFFSET_DATA_C_I_TO_CH($fp),
+						# que representa a la variable oneCharacter.data.
+	lw	v1,OFFSET_DIR_RETURN_C_I_TO_CH($fp)	# Cargo en v1 lo guardado en la direccion OFFSET_DIR_RETURN_C_I_TO_CH($fp),
+							# que representa la direccion en la cual la funcion invocante espera el 
+							# resultado de la ejecucion de esta funcion.
 	sw	v0,0(v1)	# Guardo en la direccion que la funcion espera el resultado (v1) lo cargado
 				# en v0, que es oneCharacter.data. Pero solo se guardan 4 bytes de los 11 que
 				# se reservo para ese array (en realidad son 3 bloques de 4 bytes cada uno,
 				# que dan 12 bytes en total).
-	lw	v0,12($fp)	# Cargo en v0 lo guardado en la direccion 12($fp), que son los siguientes 4
-				# bytes del array oneCharacter.data.
-	lw	v1,56($fp)	# Cargo en v1 lo guardado en la direccion 56($fp), que representa la
-				# direccion en la cual la funcion invocante espera el resultado de la
-				# ejecucion de esta funcion.
+	lw	v0,OFFSET_DATA_SECOND_C_I_TO_CH($fp)	# Cargo en v0 lo guardado en la direccion OFFSET_DATA_SECOND_C_I_TO_CH($fp),
+							# que son los siguientes 4 bytes del array oneCharacter.data.
+	lw	v1,OFFSET_DIR_RETURN_C_I_TO_CH($fp)	# Cargo en v1 lo guardado en la direccion OFFSET_DIR_RETURN_C_I_TO_CH($fp),
+							# que representa la direccion en la cual la funcion invocante espera el
+							# resultado de la ejecucion de esta funcion.
 	sw	v0,4(v1)	# Guardo el segundo bloque de 4 bytes de oneCharacter.data en la direccion
 				# especificada en v1+4 (se mueve 4 bytes sobre la direccion en v1).
-	lw	v0,16($fp)	# Cargo en v0 lo guardado en la direccion 16($fp), que son los siguientes 4
-				# bytes del array oneCharacter.data, o sea, el ultimo bloque de 4 bytes.
-	lw	v1,56($fp)	# Cargo en v1 lo guardado en la direccion 56($fp), que representa la
-				# direccion en la cual la funcion invocante espera el resultado de la
-				# ejecucion de esta funcion.
+	lw	v0,OFFSET_DATA_THIRD_C_I_TO_CH($fp)	# Cargo en v0 lo guardado en la direccion OFFSET_DATA_THIRD_C_I_TO_CH($fp),
+							# que son los siguientes 4 bytes del array oneCharacter.data, o sea, el 
+							# ultimo bloque de 4 bytes.
+	lw	v1,OFFSET_DIR_RETURN_C_I_TO_CH($fp)	# Cargo en v1 lo guardado en la direccion OFFSET_DIR_RETURN_C_I_TO_CH($fp),
+							# que representa la direccion en la cual la funcion invocante espera el 
+							# resultado de la ejecucion de esta funcion.
 	sw	v0,8(v1)	# Guardo el tercer bloque de 4 bytes de oneCharacter.data en la direccion
 				# especificada en v1+8 (se mueve 8 bytes sobre la direccion en v1).
 
 	# Voy a guardar oneCharacter.length que debe de ser retornado.
-	lw	v0,20($fp)	# Cargo en v0 lo guardado en la direccion 20($fp), que representa a 
-				# oneCharacter.length.
-	lw	v1,56($fp)	# Cargo en v1 lo guardado en la direccion 56($fp), que representa la
-				# direccion en la cual la funcion invocante espera el resultado de la
-				# ejecucion de esta funcion.
+	lw	v0,OFFSET_LENGTH_C_I_TO_CH($fp)		# Cargo en v0 lo guardado en la direccion OFFSET_LENGTH_C_I_TO_CH($fp),
+							# que representa a oneCharacter.length.
+	lw	v1,OFFSET_DIR_RETURN_C_I_TO_CH($fp)	# Cargo en v1 lo guardado en la direccion OFFSET_DIR_RETURN_C_I_TO_CH($fp),
+							# que representa la direccion en la cual la funcion invocante espera el
+							# resultado de la ejecucion de esta funcion.
 	sw	v0,12(v1)	# Guardo oneCharacter.length (v0) en la direccion especificada en 
 				# v1+12 (se mueve 12 bytes sobre la direccion en v1).
 $returnInConvertIntToCh:
-	lw	v0,56($fp)	# Cargo en v0 la direccion en la cual se va a retornar el struct, que
-				# se encuentra guardada en la direccion 56($fp).
+	lw	v0,OFFSET_DIR_RETURN_C_I_TO_CH($fp)	# Cargo en v0 la direccion en la cual se va a retornar el struct, que
+							# se encuentra guardada en la direccion OFFSET_DIR_RETURN_C_I_TO_CH($fp).
 
 	# reconstruyo los registros.
 	move	sp,$fp
-	lw	$fp,52(sp)
+	lw	$fp,OFFSET_FP_C_I_TO_CH(sp)
 
 	# destruyo stack frame
-	addu	sp,sp,56
+	addu	sp,sp,STACK_FRAME_CONVERT_INT_TO_CH
 
 	# vuelvo a funcion llamante
 	j	ra
