@@ -154,10 +154,6 @@ loadFileDescriptor:
 	bne	v0,zero,$fileno
         ## if (fileOutput == NULL) continuo.
         # Hubo error al querer escribir en el archivo => Mensaje de error.
-	#la	a0,__sF+176
-	#la	a1,MENSAJE_ERROR_LOAD_FILE
-	#la	t9,fprintf
-	#jal	ra,t9
         li a0,FILE_DESCRIPTOR_STDERR          # Cargo en a0 el FILE_DESCRIPTOR_STDERR = 2.
         la a1,MENSAJE_ERROR_LOAD_FILE         # Cargo en a1 el mensaje de error.
         li a2,BYTES_MENSAJE_ERROR_LOAD_FILE   # Cargo en a2 la cantidad de byes a escribir.
@@ -216,20 +212,8 @@ $IfFileOutputNull:
 	lw	v0,fileOutput  # cargo en v0 fileOutput
         ## if (fileOutput == NULL) return funcion closeFile
 	beq	v0,zero,$returnCloseFile
-        # Sino (fileOutput != NULL ) continuo
-        
-	#lw	a0,fileOutput  # cargo en a0 fileOutput
-	#la	t9,fclose
-	#jal	ra,t9
-	#sw	v0,24($fp)
-	#lw	v1,24($fp)
-	#li	v0,-1
-	#bne	v1,v0,$setOutputNull
-	#la	a0,__sF+176
-	#la	a1,MENSAJE_ERROR_CLOSE_FILE
-	#la	t9,fprintf
-	#jal	ra,t9
-        
+
+        # Sino (fileOutput != NULL ) continuo     
         lw	a0,ofd   	# Pongo en a0 el 'file descriptor'
         li      v0, SYS_close
         syscall
@@ -346,7 +330,7 @@ $returnWriteBufferInOFile:
 	.end	writeBufferInOFile
 	.size	writeBufferInOFile, .-writeBufferInOFile
 	
-#------  end writeBufferInOFile----#
+#---------------  end writeBufferInOFile ---------------#
 
 #--------------- begin loadDataInBuffer ---------------#
 
