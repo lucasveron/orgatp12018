@@ -216,7 +216,7 @@ $returnCloseFile:
 	.rdata
 	.align	2
 	
-#--------- BEGIN writeBufferInOFile -----#
+#--------- begin writeBufferInOFile -----#
 	.globl	writeBufferInOFile
 	.ent	writeBufferInOFile
 writeBufferInOFile:
