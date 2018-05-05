@@ -15,7 +15,7 @@ generic(param_t *parms)
 
 	/* Header PGM. */
 	fprintf(parms->fp, "P2\n");
-	fprintf(parms->fp, "%u\n", (unsigned)parms->x_res);
+	fprintf(parms->fp, "%u ", (unsigned)parms->x_res);
 	fprintf(parms->fp, "%u\n", (unsigned)parms->y_res);
 	fprintf(parms->fp, "%u\n", (unsigned)(parms->shades - 1));
 
@@ -48,12 +48,12 @@ generic(param_t *parms)
 				zr = tr;
 				zi = ti;
 			}
-
-			if (fprintf(parms->fp, "%u\n", (unsigned)c) < 0) {
+			if (fprintf(parms->fp, "%u ", (unsigned)c) < 0) {
 				fprintf(stderr, "i/o error.\n");
 				exit(1);
 			}
 		}
+		fprintf(parms->fp, "\n");
 	}
 
 	/* Flush any buffered information before quit. */
