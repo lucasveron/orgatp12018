@@ -49,7 +49,7 @@ loadPixelBrightness:
 	# Stack frame creation
 	subu	sp,sp,STACK_FRAME_LOAD_PIXEL_BRIGHTNESS
 
-	.cprestore 16
+	.cprestore 48
 	sw	ra,OFFSET_RA_L_P_B(sp)
 	sw	$fp,OFFSET_FP_L_P_B(sp)
 	sw	gp,OFFSET_GP_L_P_B(sp)
@@ -60,7 +60,7 @@ loadPixelBrightness:
 	# Parametro
 	# int loadPixelBrightness(unsigned int pixelBrightness)
 	sw	a0,OFFSET_PIXEL_BRIGHTNESS_L_P_B($fp)	# Guardo en la direccion OFFSET_PIXEL_BRIGHTNESS_L_P_B($fp) el parametro, 
-						# que representa a la variable pixelBrightness.
+							# que representa a la variable pixelBrightness.
 
 	###########################################################################
 	#  typedef struct character {						  #
@@ -81,10 +81,11 @@ loadPixelBrightness:
 	
 	# character ch = convertIntToCharacter(pixelBrightness);
 	addu	a0,$fp,OFFSET_CH_DATA_L_P_B	# Cargo en a0 la direccion en donde espero que se guarde
-					# el struct retornado por la funcion convertIntToCharacter.
-					# Es el primer parametro que espera esta funcion.
-	lw	a1,OFFSET_PIXEL_BRIGHTNESS_L_P_B($fp)	# Cargo en a0, la variable pixelBrightness, guardada en la direccion
-					# OFFSET_PIXEL_BRIGHTNESS_L_P_B($fp), que seria el segundo parametro de la funcion.
+						# el struct retornado por la funcion convertIntToCharacter.
+						# Es el primer parametro que espera esta funcion.
+	lw	a1,OFFSET_PIXEL_BRIGHTNESS_L_P_B($fp)	# Cargo en a0, la variable pixelBrightness, guardada 
+							# en la direccion OFFSET_PIXEL_BRIGHTNESS_L_P_B($fp),
+							# que seria el segundo parametro de la funcion.
 	la	t9,convertIntToCharacter # Cargo en t9, la direccion de la funcion convertIntToCharacter.
 	jal	ra,t9		# Invoco la funcion, salto a convertIntToCharacter.
 				# No guardo el valor retornado por la funcion y cargado en v0, porque
@@ -105,8 +106,8 @@ $loopPutchLoadPixelBrightness:
 
 	# (i < ch.length) ?
 	slt	v0,v0,v1
-	bne	v0,FALSE,$insideOfTheLoopPutchLoadPixelBrightness # If (i < ch.length) goto 
-							# $insideOfTheLoopPutchLoadPixelBrightness
+	bne	v0,FALSE,$insideOfTheLoopPutchLoadPixelBrightness 	# If (i < ch.length) goto 
+									# $insideOfTheLoopPutchLoadPixelBrightness
 	b	$loadTheResultToReturn	# Llego a la condicion de corte del loop, por lo cual se va 
 					# cargar el resultado a ser retornado.
 
@@ -115,7 +116,7 @@ $insideOfTheLoopPutchLoadPixelBrightness:
 	lw	v1,OFFSET_I_L_P_B($fp)	# Cargo en v1 el valor de la variable i, guardado en la direccion 
 					# OFFSET_I_L_P_B($fp).
 	addu	v0,$fp,OFFSET_CH_DATA_L_P_B	# Cargo en v0 la direccion donde se encuentra el primer elemento 
-					# del array ch.data.
+						# del array ch.data.
 	addu	v0,v0,v1	# Me muevo i posiciones sobre ch.data.
 	lb	v0,0(v0)	# Cargo el valor de ch.data en la posicion i, en v0.
 	move	a0,v0		# Cargo en a0, el valor que tiene v0, que es ch.data[i]. Esto es
@@ -123,19 +124,19 @@ $insideOfTheLoopPutchLoadPixelBrightness:
 	la	t9,putch	# Cargo la direccion de la funcion putch.
 	jal	ra,t9		# Ejecuto la funcion putch.
 	sw	v0,OFFSET_RDO_L_P_B($fp)	# Guardo en la direccion OFFSET_RDO_L_P_B($fp), que representa a 
-					# la variable rdo, lo retornado por la funcion putch.
+						# la variable rdo, lo retornado por la funcion putch.
 
 	# (rdo != OKEY) ?
 	lw	v0,OFFSET_RDO_L_P_B($fp)	# Cargo en v0 lo guardado en la direccion OFFSET_RDO_L_P_B($fp)
-	beq	v0,OKEY,$incrementInLoopPutchLoadPixelBrightness # If (rdo == OKEY) goto
-								#  $incrementInLoopPutchLoadPixelBrightness
+	beq	v0,OKEY,$incrementInLoopPutchLoadPixelBrightness	# If (rdo == OKEY) goto
+									#  $incrementInLoopPutchLoadPixelBrightness
 
 	# rdo is not OKEY
 	lw	v0,OFFSET_RDO_L_P_B($fp)	# Cargo en v0 lo guardado en la direccion OFFSET_RDO_L_P_B($fp), que 
-					# representa la variable rdo.
+						# representa la variable rdo.
 	sw	v0,OFFSET_RETURN_L_P_B($fp)	# Guardo en la direccion OFFSET_RETURN_L_P_B($fp), el valor de rdo, que va
-					# a ser donde se guarde el resultado de la funcion.
-	b	$returnLoadPixelBrightness # Salto incondicional para hacer el return de la funcion.
+						# a ser donde se guarde el resultado de la funcion.
+	b	$returnLoadPixelBrightness	# Salto incondicional para hacer el return de la funcion.
 $incrementInLoopPutchLoadPixelBrightness:
 	# i++
 	lw	v0,OFFSET_I_L_P_B($fp)
@@ -144,11 +145,13 @@ $incrementInLoopPutchLoadPixelBrightness:
 
 	b	$loopPutchLoadPixelBrightness
 $loadTheResultToReturn:
-	lw	v0,OFFSET_RDO_L_P_B($fp)	# Cargo en v0 lo guardado en la direccion OFFSET_RDO_L_P_B($fp), que representa la variable rdo.
-	sw	v0,OFFSET_RETURN_L_P_B($fp)	# Guardo en la direccion OFFSET_RETURN_L_P_B($fp), el valor de rdo, que va a ser donde se guarde el
-				# resultado de la funcion.
+	lw	v0,OFFSET_RDO_L_P_B($fp)	# Cargo en v0 lo guardado en la direccion OFFSET_RDO_L_P_B($fp), 
+						# que representa la variable rdo.
+	sw	v0,OFFSET_RETURN_L_P_B($fp)	# Guardo en la direccion OFFSET_RETURN_L_P_B($fp), el valor de rdo, 
+						# que va a ser donde se guarde el resultado de la funcion.
 $returnLoadPixelBrightness:
-	lw	v0,OFFSET_RETURN_L_P_B($fp)	# Cargo en v0 lo guardado en la direccion OFFSET_RETURN_L_P_B($fp), que representa el resultado de la funcion.
+	lw	v0,OFFSET_RETURN_L_P_B($fp)	# Cargo en v0 lo guardado en la direccion OFFSET_RETURN_L_P_B($fp), 
+						# que representa el resultado de la funcion.
 
 	# reconstruyo los registros.
 	move	sp,$fp
@@ -179,7 +182,7 @@ mips32_plot:
 	# Stack frame creation
 	subu	sp,sp,STACK_FRAME_MIPS32_PLOT
 
-	.cprestore 16
+	.cprestore 64
 	sw	ra,OFFSET_RA_M_32_P(sp)
 	sw	$fp,OFFSET_FP_M_32_P(sp)
 	sw	gp,OFFSET_GP_M_32_P(sp)
@@ -229,10 +232,10 @@ mips32_plot:
 	# (rdo != OKEY) ?
 	lw	v0,OFFSET_RDO_M_32_P($fp)	# Cargo en v0 lo guardado en la direccion OFFSET_RDO_M_32_P($fp), 
 						# que representa la variable rdo.
-	beq	v0,OKEY,$writeHeader # If (rdo == OKEY) goto $writeHeader
+	beq	v0,OKEY,$writeHeader		# If (rdo == OKEY) goto $writeHeader
 
 	# rdo is not OKEY
-	b	$returnMips32Plot # Salto incondicional a $returnMips32Plot.
+	b	$returnMips32Plot	# Salto incondicional a $returnMips32Plot.
 $writeHeader:
 	# rdo = writeHeader((unsigned)parms->y_res, (unsigned)parms->x_res, (unsigned)(parms->shades - 1));
 	lw	v1,OFFSET_PARMS_M_32_P($fp)	# Cargo en v1, la dir a la que apunta parms. Me preparo para cargar parms->y_res
@@ -264,7 +267,7 @@ $writeHeader:
 	beq	v0,OKEY,$loopPixelInMips32Plot 	# If (rdo == OKEY) goto $loopPixelInMips32Plot.
 
 	# rdo is not equal to OKEY
-	b	$returnMips32Plot # Salto incondicional a $returnMips32Plot.
+	b	$returnMips32Plot	# Salto incondicional a $returnMips32Plot.
 $loopPixelInMips32Plot:
 	# for (y = 0, ci = parms->UL_im; y < parms->y_res; ++y, ci -= parms->d_im)
 
@@ -275,7 +278,7 @@ $loopPixelInMips32Plot:
 	# ci = parms->UL_im
 	lw	v0,OFFSET_PARMS_M_32_P($fp)	# Cargo en v0 la dir apuntada por parms (* parms), guardada 
 						# en la dir OFFSET_PARMS_M_32_P($fp).
-	l.s	$f0,4(v0)	# Cargo en f0 lo apuntado por *parms + 4, que es UL_im (es float).
+	l.s	$f0,4(v0)			# Cargo en f0 lo apuntado por *parms + 4, que es UL_im (es float).
 	s.s	$f0,OFFSET_CI_M_32_P($fp)	# Guardo en la dir OFFSET_CI_M_32_P($fp) el valor guardado 
 						# en f0, que es UL_im (float), que seria ci.
 $loopInYInMips32Plot:
@@ -420,11 +423,11 @@ $insideOfTheLoopShadesInMips32Plot:
 	# parms->s_im
 	lw	v0,OFFSET_PARMS_M_32_P($fp)	# Cargo en v0 la direccion apuntada por parms (* parms), 
 						# guardada en la dir OFFSET_PARMS_M_32_P($fp).
-	l.s	$f0,28(v0)	# Cargo en f0 lo guardado en la dir *parms+28, que es s_im (es float).
+	l.s	$f0,28(v0)			# Cargo en f0 lo guardado en la dir *parms+28, que es s_im (es float).
 
 	# Hago efectivamente: ti = parms->s_im + zr * zi * 2.0f;
-	add.s	$f0,$f0,$f2	# Sumo lo que tiene f0 (parms->s_im) con lo que tiene f2 (zr * zi * 2.0f); y 
-				# guardo el resultado en f0.
+	add.s	$f0,$f0,$f2			# Sumo lo que tiene f0 (parms->s_im) con lo que tiene f2 (zr * zi * 2.0f); 
+						# y guardo el resultado en f0.
 	s.s	$f0,OFFSET_TI_M_32_P($fp)	# Guardo el resultado de la suma (f0) en la direccion 
 						# OFFSET_TI_M_32_P($fp), que representa a la variable ti.
 
