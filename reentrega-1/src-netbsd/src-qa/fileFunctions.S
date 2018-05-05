@@ -14,6 +14,9 @@
 # Offsets and Stack Frames
 
 #define STACK_FRAME_WRITE_HEADER 112
+
+#define STACK_FRAME_LOAD_FILE_DESC 40
+
 #define OFFSET_RA_W_H 104
 #define OFFSET_FP_W_H 100
 #define OFFSET_GP_W_H 96
@@ -88,17 +91,17 @@ initFile:
 	.globl	loadFileDescriptor
 	.ent	loadFileDescriptor
 loadFileDescriptor:
-	.frame	$fp,48,ra     # reservo espacio para el stack frame de 48 bytes
+	.frame	$fp,STACK_FRAME_LOAD_FILE_DESC,ra     # reservo espacio para el stack frame de 40 bytes
 	.set	noreorder
 	.cpload	t9
 	.set	reorder
         
         # creacion del stack frame
-	subu	sp,sp,48
+	subu	sp,sp,STACK_FRAME_LOAD_FILE_DESC
 	.cprestore 16
-	sw	ra,40(sp)
-	sw	$fp,36(sp)
-	sw	gp,32(sp)
+	sw	ra,32(sp)
+	sw	$fp,28(sp)
+	sw	gp,24(sp)
 
         # de aqui al fin de la funcion uso $fp en lugar de sp.
 	move	$fp,sp
@@ -109,12 +112,8 @@ loadFileDescriptor:
 	bne	v0,zero,$fileno
         ## if (fileOutput == NULL) continuo.
         # Hubo error al querer escribir en el archivo => Mensaje de error.
-	#la	a0,__sF+176
-	#la	a1,MENSAJE_ERROR_LOAD_FILE
-	#la	t9,fprintf
-	#jal	ra,t9
         li a0,FILE_DESCRIPTOR_STDERR          # Cargo en a0 el FILE_DESCRIPTOR_STDERR = 2.
-        la a1,MENSAJE_ERROR_LOAD_FILE         # Cargo en 01 el mensaje de error.
+        la a1,MENSAJE_ERROR_LOAD_FILE         # Cargo en a1 el mensaje de error.
         li a2,BYTES_MENSAJE_ERROR_LOAD_FILE   # Cargo en a2 la cantidad de byes a escribir.
         syscall     # No controlo error porque sale de por si de la funcion por error.
 
@@ -124,15 +123,15 @@ loadFileDescriptor:
 	b	$returnLoadFile
 $fileno:
 	lw	v0,fileOutput  # Carga en v0 el valor de fileOutput.
-	lh	v0,14(v0)      # ???
+	lh	v0,14(v0)      # Carga en v0 el file descriptor output.
 	sw	v0,ofd         # Guarda el valor del registro v0 en la direccion de ofd.
 	sw	zero,24($fp)   # Guarda un 0 en stack[24].
 $returnLoadFile:
 	lw	v0,24($fp)     # Cargo en v0 el contenido del stack[24] = ERROR_FILE
 	move	sp,$fp         # Iguala sp con fp.
-	lw	ra,40(sp)      # Carga en ra stack[40] para retornar a la funcion llamante.
-	lw	$fp,36(sp)     # Carga en fp stack[36]. ???
-	addu	sp,sp,48       # Rompe el stack frame.
+	lw	ra,32(sp)      # Carga en ra stack[32] para retornar a la funcion llamante.
+	lw	$fp,28(sp)     # Carga en fp stack[28]. ???
+	addu	sp,sp,STACK_FRAME_LOAD_FILE_DESC       # Rompe el stack frame.
 	j	ra             # Regresa a la funcion llamante.
 	.end	loadFileDescriptor
 #--------------- end loadFileDescriptor ---------------#
