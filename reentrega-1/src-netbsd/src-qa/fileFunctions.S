@@ -4,14 +4,47 @@
 #include "constants.h"
 
 # Size mensajes
-#define BYTES_MENSAJE_ERROR_WRITE   52
-#define BYTES_MENSAJE_ERROR_CLOSE_FILE   68
-#define BYTES_MENSAJE_ERROR_LOAD_FILE   51
+#define BYTES_MENSAJE_ERROR_WRITE	52
+#define BYTES_MENSAJE_ERROR_CLOSE_FILE	68
+#define BYTES_MENSAJE_ERROR_LOAD_FILE	51
 
-#define FILE_DESCRIPTOR_STDERR   2
+#define FILE_DESCRIPTOR_STDERR   	2
 
 
 # Offsets and Stack Frames
+
+#define STACK_FRAME_INIT_FILE 	8
+#define OFFSET_FP_INIT_FILE 	4
+#define OFFSET_GP_INIT_FILE 	0
+#define OFFSET_FILE_INIT_FILE 	8
+
+#define STACK_FRAME_LOAD_FILE_DESCRIPTOR 36
+#define OFFSET_RA_LOAD_FILE_DESC 32
+#define OFFSET_FP_LOAD_FILE_DESC 28
+#define OFFSET_GP_LOAD_FILE_DESC 24
+#define OFFSET_RETURN_LOAD_FILE_DESC 16
+
+#define STACK_FRAME_CLOSE_FILE 32
+#define OFFSET_RA_CLOSE_FILE 24
+#define OFFSET_FP_CLOSE_FILE 20
+#define OFFSET_GP_CLOSE_FILE 16
+
+#define STACK_FRAME_WRITE_BUFFER_IN_OFILE 56
+#define OFFSET_RA_W_BUF_IN_OF 48
+#define OFFSET_FP_W_BUF_IN_OF 44
+#define OFFSET_GP_W_BUF_IN_OF 40
+#define OFFSET_QUANTITY_CH_IN_BUFFER_TO_LOAD_W_BUF_IN_OF 60
+#define OFFSET_BUFFER_TO_LOAD_W_BUF_IN_OF 56
+#define OFFSET_RETURN_W_BUF_IN_OF 32
+#define OFFSET_BYTES_WRITE_W_BUF_IN_OF 28
+#define OFFSET_BYTES_TO_WRITE_W_BUF_IN_OF 24
+#define OFFSET_BYTES_WRITE_ACUM_W_BUF_IN_OF 20
+#define OFFSET_COMPLETE_DELIVERY_W_BUF_IN_OF 16
+
+
+
+###### -------DESDE ACA PARA ABAJO BORRARLO
+
 #define STACK_FRAME_WRITEINOFILE 56
 
 #define OFFSET_Q_BYTES_BUFFER_LOAD 60
@@ -24,9 +57,6 @@
 #define OFFSET_BYTES_TO_WRITE 24
 #define OFFSET_BYTES_ACUM 20
 #define OFFSET_BYTES_DELIVERY 16
-
-
-
 
 #define STACK_FRAME_WRITE_HEADER 112
 
@@ -45,13 +75,13 @@
 #define OFFSET_GP_LOAD_DATA_BUFFER 16
 #define OFFSET_STORE_BYTE 8
 
-#define STACK_FRAME_PUTCH 48
-#define OFFSET_RA_PUTCH 40
-#define OFFSET_FP_PUTCH 36
-#define OFFSET_GP_PUTCH 32
-#define OFFSET_ZERO_PUTCH 24
+#define STACK_FRAME_PUTCH 40
+#define OFFSET_RA_PUTCH 32
+#define OFFSET_FP_PUTCH 28
+#define OFFSET_GP_PUTCH 24
+#define OFFSET_CHARACTER_PUTCH 40
 #define OFFSET_RETURN_PUTCH 20
-#define OFFSET_CHAR_PUTCH 16
+#define OFFSET_RDO_PUTCH 16
 
 #define STACK_FRAME_FLUSH 40
 #define OFFSET_RA_FLUSH 32
@@ -80,102 +110,113 @@
 #define OFFSET_RETURN_W_H 80
 
 
-	.globl	quantityCharactersInBuffer
-	.globl	quantityCharactersInBuffer
-	.section	.bss
-	.align	2
-	.type	quantityCharactersInBuffer, @object
-	.size	quantityCharactersInBuffer, 4
-quantityCharactersInBuffer:
-	.space	4
+##-----	initFile -----##
+
 	.text
 	.align	2
 	.globl	initFile
 	.ent	initFile
 initFile:
-	.frame	$fp,16,ra		
+	.frame	$fp,STACK_FRAME_INIT_FILE,ra		
         .set	noreorder
 	.cpload	t9
 	.set	reorder
 
 	# Stack frame creation
-        subu	sp,sp,16
+        subu	sp,sp,STACK_FRAME_INIT_FILE
 
-	.cprestore 0
-	sw	$fp,12(sp)
-	sw	gp,8(sp)
+	.cprestore OFFSET_GP_INIT_FILE
+	sw	$fp,OFFSET_FP_INIT_FILE(sp)
+	sw	gp,OFFSET_GP_INIT_FILE(sp)
 	
         # A partir de aca uso $fp en lugar de sp
         move	$fp,sp
 
-	# Guardo a0 en la direccion $fp(16)
-	sw	a0,16($fp)
-	lw	v0,16($fp)       #Cargo en v0 la posicion [16], v0 =a0
-	sw	v0,fileOutput    #Guardo a0 en la variable fileOutput (FileOutput = file)
+        # Parametro
+	# void initFile(FILE * file)
+	sw	a0,OFFSET_FILE_INIT_FILE($fp)      # Guardo a0 (FILE * file) en la direccion OFFSET_FILE_INIT_FILE($fp)
+
+        # fileOutput = file;
+	lw	v0,OFFSET_FILE_INIT_FILE($fp)      # Cargo en v0 lo guardado en la direccion OFFSET_FILE_INIT_FILE($fp),
+                                                   # que es file.
+	sw	v0,fileOutput                      # Guardo lo que tiene v0 en la variable fileOutput (fileOutput = file)
 
 
 	move	sp,$fp
-	lw	$fp,12(sp)
+	lw	$fp,OFFSET_FP_INIT_FILE(sp)
         
         # Destruyo el stackframe	
-	addu	sp,sp,16
+	addu	sp,sp,STACK_FRAME_INIT_FILE
 
         # Vuelvo a la funcion que me invoco
 	j	ra
 
 	.end	initFile
 	
-	.rdata
-	.align	2
-
 #---------------  loadFileDescriptor  ---------------#
 
+        .text
+	.align	2	
 	.globl	loadFileDescriptor
 	.ent	loadFileDescriptor
 loadFileDescriptor:
-	.frame	$fp,STACK_FRAME_LOAD_FILE_DESC,ra     # reservo espacio para el stack frame de 40 bytes
+	.frame	$fp,STACK_FRAME_LOAD_FILE_DESCRIPTOR,ra     # Reservo espacio para el stack frame de 
+                                                            # STACK_FRAME_LOAD_FILE_DESCRIPTOR bytes
 	.set	noreorder
 	.cpload	t9
 	.set	reorder
         
-        # creacion del stack frame
-	subu	sp,sp,STACK_FRAME_LOAD_FILE_DESC
-	.cprestore 16
-	sw	ra,OFFSET_RA_LOAD_FILE(sp)
-	sw	$fp,OFFSET_FP_LOAD_FILE(sp)
-	sw	gp,OFFSET_GP_LOAD_FILE(sp)
+        # Creacion del stack frame
+	subu	sp,sp,STACK_FRAME_LOAD_FILE_DESCRIPTOR
 
-        # de aqui al fin de la funcion uso $fp en lugar de sp.
+	.cprestore OFFSET_GP_LOAD_FILE_DESC
+	sw	ra,OFFSET_RA_LOAD_FILE_DESC(sp)
+	sw	$fp,OFFSET_FP_LOAD_FILE_DESC(sp)
+	sw	gp,OFFSET_GP_LOAD_FILE_DESC(sp)
+
+        # De aqui al fin de la funcion uso $fp en lugar de sp.
 	move	$fp,sp
-        
-        # cargo en v0 la direccion del fileOutput.
-	lw	v0,fileOutput
-        ## if(fileOutput != NULL) brancheo.
-	bne	v0,zero,$fileno
-        ## if (fileOutput == NULL) continuo.
-        # Hubo error al querer escribir en el archivo => Mensaje de error.
+
+        # (fileOutput == NULL)?        
+	lw	v0,fileOutput                 # Cargo en v0 la direccion del fileOutput.
+	bne	v0,zero,$fileno               # IF (fileOutput != NULL) salto a $fileno.
+
+        # fileOutput IS NULL
+
+        # Escribo mensaje de error en la salida estandar para errores y hago return de la funcion.
         li a0,FILE_DESCRIPTOR_STDERR          # Cargo en a0 el FILE_DESCRIPTOR_STDERR = 2.
         la a1,MENSAJE_ERROR_LOAD_FILE         # Cargo en a1 el mensaje de error.
         li a2,BYTES_MENSAJE_ERROR_LOAD_FILE   # Cargo en a2 la cantidad de byes a escribir.
         syscall     # No controlo error porque sale de por si de la funcion por error.
 
 	# return ERROR_FILE
-        li      v0,ERROR_FILE  # Cargo codigo de error, que sera el resultado de la funcion.
-	sw	v0,LOAD_FILE_DESC($fp)     # Guardo en la direccion LOAD_FILE_DESC($fp) el resultado de la funcion.
+        li      v0,ERROR_FILE                            # Cargo codigo de error, que sera el resultado de la funcion.
+	sw	v0,OFFSET_RETURN_LOAD_FILE_DESC($fp)     # Guardo en la direccion OFFSET_RETURN_LOAD_FILE_DESC($fp) el 
+                                                         # resultado de la funcion.
 	b	$returnLoadFile
 $fileno:
+        # ofd = fileno(fileOutput);
 	lw	v0,fileOutput  # Carga en v0 el valor de fileOutput.
-	lh	v0,14(v0)      # Carga en v0 el file descriptor output.
+	lh	v0,14(v0)      # Carga en v0 el file descriptor, que esta en la posicion 14 dentro de la estructura de fileOutput.
 	sw	v0,ofd         # Guarda el valor del registro v0 en la direccion de ofd.
-	sw	zero,LOAD_FILE_DESC($fp)   # Guarda un 0 en stack[LOAD_FILE_DESC].
+
+        # return OKEY;
+	sw	zero,OFFSET_RETURN_LOAD_FILE_DESC($fp)   # Guarda un 0 (=OKEY) en stack[OFFSET_RETURN_LOAD_FILE_DESC].
 $returnLoadFile:
-	lw	v0,LOAD_FILE_DESC($fp)     # Cargo en v0 el contenido del stack[24] = ERROR_FILE
-	move	sp,$fp         # Iguala sp con fp.
-	lw	ra,OFFSET_RA_LOAD_FILE(sp)      # Carga en ra stack[OFFSET_RA_LOAD_FILE] para retornar a la funcion llamante.
-	lw	$fp,OFFSET_FP_LOAD_FILE(sp)     # Carga en fp stack[OFFSET_FP_LOAD_FILE]. ???
-	addu	sp,sp,STACK_FRAME_LOAD_FILE_DESC       # Rompe el stack frame.
+	lw	v0,OFFSET_RETURN_LOAD_FILE_DESC($fp)     # Cargo en v0 el resultado de la funcion (return).
+
+        # Reconstruyo registros
+	move	sp,$fp
+	lw	ra,OFFSET_RA_LOAD_FILE_DESC(sp)
+	lw	$fp,OFFSET_FP_LOAD_FILE_DESC(sp)
+
+        # Destruye el stack frame.
+	addu	sp,sp,STACK_FRAME_LOAD_FILE_DESCRIPTOR
+
 	j	ra             # Regresa a la funcion llamante.
+
 	.end	loadFileDescriptor
+
 #--------------- end loadFileDescriptor ---------------#
 
 #--------------- begin closeFile ----------------------#
@@ -192,148 +233,216 @@ closeFile:
 
         # creacion del stack frame
 	subu	sp,sp,STACK_FRAME_CLOSE_FILE
-	.cprestore 16
-        
+
+	.cprestore OFFSET_GP_CLOSE_FILE  
 	sw	ra,OFFSET_RA_CLOSE_FILE(sp)
 	sw	$fp,OFFSET_FP_CLOSE_FILE(sp)
 	sw	gp,OFFSET_GP_CLOSE_FILE(sp)
 
         # de aqui al fin de la funcion uso $fp en lugar de sp.
 	move	$fp,sp
-        # carga en v1 el ofd
-	lw	v1,ofd
-        # carga en v0 1
-	li	v0,1
-        ## if (ofd == 0) salto a  IfFileOutputNull
-	bne	v1,v0,$IfFileOutputNull
-	sw	zero,fileOutput
-	b	$returnCloseFile
-$IfFileOutputNull:
-	lw	v0,fileOutput  # cargo en v0 fileOutput
-        ## if (fileOutput == NULL) return funcion closeFile
-	beq	v0,zero,$returnCloseFile
 
-        # Sino (fileOutput != NULL ) continuo     
-        lw	a0,ofd   	# Pongo en a0 el 'file descriptor'
+        # (ofd == 1) ?        
+	lw	v1,ofd                    # Carga en v1 el ofd        
+	li	v0,1                      # Carga en v0 1
+	bne	v1,v0,$IfFileOutputNull   # IF (ofd != 1) goto $IfFileOutputNull
+
+        # ofd is equals to 1
+	sw	zero,fileOutput           # fileOutput = NULL;
+
+	b	$returnCloseFile          # Salto incondicional a $returnCloseFile
+$IfFileOutputNull:
+        # ofd is not equals to 1
+
+        # (fileOutput != NULL) ?
+	lw	v0,fileOutput             # Cargo en v0 fileOutput
+	beq	v0,zero,$returnCloseFile  # IF (fileOutput == NULL) goto $returnCloseFile
+
+        # Sino (fileOutput != NULL ) continuo
+  
+        lw	a0,ofd   	          # Pongo en a0 el 'file descriptor'
         li      v0, SYS_close
         syscall
         
-        beq     a3,zero,$setOutputNull # Si no hubo error, salto a $setOutputNull.
+        beq     a3,zero,$setOutputNull    # Si no hubo error, salto a $setOutputNull.
     
         # hubo error al querer escribir en el archivo => Mensaje de error. 
-        li      a0,FILE_DESCRIPTOR_STDERR # Cargo en a0 FILE_DESCRIPTOR_STDERR.
+        li      a0,FILE_DESCRIPTOR_STDERR         # Cargo en a0 FILE_DESCRIPTOR_STDERR.
         la      a1,MENSAJE_ERROR_CLOSE_FILE
         li      a2,BYTES_MENSAJE_ERROR_CLOSE_FILE # Cargo en a2 la cantidad de bytes a escribir.
         li      v0, SYS_write
         syscall # No controlo error porque sale de por si de la funcion por error.
 
 $setOutputNull:
-	sw	zero,fileOutput # Pongo un 0 en la dirección del fileOutput
+	sw	zero,fileOutput            # Pongo un 0 (NULL) en la dirección del fileOutput
 $returnCloseFile:
-	move	sp,$fp     # Iguala sp con fp.
-	lw	ra,OFFSET_RA_CLOSE_FILE(sp)  # Carga en ra stack[OFFSET_RA_CLOSE_FILE] para retornar a la funcion llamante.
-	lw	$fp,OFFSET_FP_CLOSE_FILE(sp) # Carga en fp stack[OFFSET_FP_CLOSE_FILE].
-	addu	sp,sp,STACK_FRAME_CLOSE_FILE   # Rompe el stack frame.
+	move	sp,$fp                         # Iguala sp con fp.
+	lw	ra,OFFSET_RA_CLOSE_FILE(sp)    # Carga en ra stack[OFFSET_RA_CLOSE_FILE] para retornar a la funcion llamante.
+	lw	$fp,OFFSET_FP_CLOSE_FILE(sp)   # Carga en fp stack[OFFSET_FP_CLOSE_FILE].
+
+	addu	sp,sp,STACK_FRAME_CLOSE_FILE   # Destruyo el stack frame.
+
 	j	ra         # Regresa a la funcion llamante.
+
 	.end	closeFile
+
 #--------------- end closeFile ---------------#
 
-	.rdata
-	.align	2
-	
+
 #--------- begin writeBufferInOFile -----#
+
+        .text
+	.align	2
 	.globl	writeBufferInOFile
 	.ent	writeBufferInOFile
 writeBufferInOFile:
-	.frame	$fp,STACK_FRAME_WRITEINOFILE,ra		#Reservo espacio para el stack frame de 64 bytes
+	.frame	$fp,STACK_FRAME_WRITE_BUFFER_IN_OFILE,ra
 	.set	noreorder
 	.cpload	t9
 	.set	reorder
 	
 	#Creacion del Stack Frame
-	subu	sp,sp,STACK_FRAME_WRITEINOFILE
-	.cprestore 16
-	sw	ra,OFFSET_RA_STACK_FRAME_WRITEINOFILE(sp)
-	sw	$fp,OFFSET_FP_STACK_FRAME_WRITEINOFILE(sp)
-	sw	gp,OFFSET_GP_STACK_FRAME_WRITEINOFILE(sp)
+	subu	sp,sp,STACK_FRAME_WRITE_BUFFER_IN_OFILE
+
+	.cprestore OFFSET_GP_W_BUF_IN_OF
+	sw	ra,OFFSET_RA_W_BUF_IN_OF(sp)
+	sw	$fp,OFFSET_FP_W_BUF_IN_OF(sp)
+	sw	gp,OFFSET_GP_W_BUF_IN_OF(sp)
 
 	# A partir de aca uso el $fp en lugar del sp
         move	$fp,sp
 	
-	sw	a0, OFFSET_BUFFER_LOAD ($fp) #Guardo el registro a0 en la direcion [64] del Stack Frame
-	sw	a1,OFFSET_Q_BYTES_BUFFER_LOAD ($fp) #Guardo el registro a1 en la direcion [68] del Stack Frame
-	lw	v0,fileOutput #Cargo la direccion de la variable fileOutput en v0
-	beq	v0,zero,$caracterInvalido # if fileOutPut == false, branch a caracterInvalido
-	lw	v0,OFFSET_Q_BYTES_BUFFER_LOAD ($fp) #Carga en v0 la direccion [68] del Stack Frame, vo= quantityCharactersInBufferToLoad
-	blez	v0,$caracterInvalido #Si  quantityCharactersInBufferToLoad<=0 branch a funcion caracterInvalido
-	b	$inicializacionVariables  #Branch a funcion
+	sw	a0,OFFSET_BUFFER_TO_LOAD_W_BUF_IN_OF($fp)                   # Guardo el registro a0 en la direcion [OFFSET_BUFFER_TO_LOAD_W_BUF_IN_OF
+                                                                            # ($fp)] del Stack Frame
+	sw	a1,OFFSET_QUANTITY_CH_IN_BUFFER_TO_LOAD_W_BUF_IN_OF($fp)    # Guardo el registro a1 en la direcion
+                                                                            # [OFFSET_QUANTITY_CH_IN_BUFFER_TO_LOAD_W_BUF_IN_OF($fp)] del Stack Frame
 
-$caracterInvalido:
-	sw	zero,40($fp) #Guarda zero en la direccion [40] del Stack Frame
-	b	$returnWriteBufferInOFile #Branch a la funcion returnWriteBufferInOFile
+        # (fileOutput == NULL || quantityCharactersInBufferToLoad <= 0) ?
+
+        # (fileOutput == NULL) ?
+	lw	v0,fileOutput                          # Cargo la direccion de la variable fileOutput en v0
+	beq	v0,zero,$notWrite                      # IF (fileOutPut == NULL), goto $notWrite
+
+        # fileOutput is not NULL
+
+        # (quantityCharactersInBufferToLoad <= 0) ?
+	lw	v0,OFFSET_QUANTITY_CH_IN_BUFFER_TO_LOAD_W_BUF_IN_OF($fp)     # Carga en v0 lo guardado en la direccion 
+                                                                             # [OFFSET_QUANTITY_CH_IN_BUFFER_TO_LOAD_W_BUF_IN_OF($fp)] del Stack 
+                                                                             # Frame, v0= quantityCharactersInBufferToLoad
+	blez	v0,$notWrite                           # IF (quantityCharactersInBufferToLoad <= 0) goto $notWrite
+
+        # quantityCharactersInBufferToLoad is > 0
+
+	b	$inicializacionVariables               # Salto incondicional a $inicializacionVariables
+
+$notWrite:
+        # return OKEY;
+	sw	zero,OFFSET_RETURN_W_BUF_IN_OF($fp)    # Guarda zero (= OKEY) en la direccion [OFFSET_RETURN_W_BUF_IN_OF($fp)] del Stack Frame
+	b	$returnWriteBufferInOFile              # Branch a $returnWriteBufferInOFile
 $inicializacionVariables:
-	li	v0,1  #Carga 1 en v0, 
-	sw	v0,OFFSET_BYTES_DELIVERY($fp)    #Guardo v0=1 en la direccion [24] del stack frame
-	sw	zero,OFFSET_BYTES_ACUM($fp) #Guardo zero en la posicion [28] del Stack frame, [28]=bytesWriteAcum
-	lw	v0,OFFSET_Q_BYTES_BUFFER_LOAD ($fp)  #Carga en v0 la direccion [68] del Stack Frame, vo= quantityCharactersInBufferToLoad
-	sw	v0, OFFSET_BYTES_TO_WRITE ($fp) #Guardo v0=bytesToWrite=quantityCharactersInBufferToLoad, en la posicion [32] del Stack frame
+        # int completeDelivery = FALSE;
+	li	v0,FALSE                                        # Carga FALSE en v0.
+	sw	v0,OFFSET_COMPLETE_DELIVERY_W_BUF_IN_OF($fp)    # Guardo v0=FALSE en la direccion [OFFSET_COMPLETE_DELIVERY_W_BUF_IN_OF] del 
+                                                                # stack frame.
+
+        # int bytesWriteAcum = 0;
+	sw	zero,OFFSET_BYTES_WRITE_ACUM_W_BUF_IN_OF($fp)   # Guardo zero en la posicion [OFFSET_BYTES_WRITE_ACUM_W_BUF_IN_OF($fp)] del Stack
+                                                                # frame.
+
+        # int bytesToWrite = quantityCharactersInBufferToLoad;
+	lw	v0,OFFSET_QUANTITY_CH_IN_BUFFER_TO_LOAD_W_BUF_IN_OF($fp)     # Carga en v0 la direccion 
+                                                                             # [OFFSET_QUANTITY_CH_IN_BUFFER_TO_LOAD_W_BUF_IN_OF($fp)] del 
+                                                                             # Stack Frame, v0 = quantityCharactersInBufferToLoad
+	sw	v0,OFFSET_BYTES_TO_WRITE_W_BUF_IN_OF($fp)          # Guardo v0=bytesToWrite=quantityCharactersInBufferToLoad, en la posicion
+                                                                   # [OFFSET_BYTES_TO_WRITE_W_BUF_IN_OF($fp)] del Stack frame.
 $inicioCicloWhile:
-	lw	v1,OFFSET_BYTES_DELIVERY($fp) #Cargo en v1, la direccion en la posicion [24] del Stack frame, v1=1
-	li	v0,1 #Carga 1 en v0
-	beq	v1,v0,$mainWhile  #Si v1 = v0, branch  a la funcion, inicio ciclo WHILE
-	b	$functionZero  #Branch a la funcion functionZero
+        # while (completeDelivery == FALSE)
+	lw	v1,OFFSET_COMPLETE_DELIVERY_W_BUF_IN_OF($fp)       # Cargo en v1 lo guardado en la direccion en la posicion
+                                                                   # [OFFSET_COMPLETE_DELIVERY_W_BUF_IN_OF($fp)] del Stack frame.
+	li	v0,FALSE                                   # Carga FALSE en v0
+	beq	v1,v0,$mainWhile                       # Si (completeDelivery == FALSE), salto a $mainWhile, o sea, dentro del while.
+
+        # completeDelivery is not FALSE
+	b	$functionZero                          # Branch a $functionZero
 $mainWhile:
-	lw	v1, OFFSET_BUFFER_LOAD ($fp) #Carga en el v1 la direccion [64] del stack frame, v1=bufferToLoad
-	lw	v0,OFFSET_BYTES_ACUM($fp) #Carga en v0 la direccion [28] del stack frame , v0=zero
-	addu v0,v1,v0 #v0 = buffertoLoad + bytesWriteAcum
-	lw	a0,ofd #Cargo ofd en a0. a0 = ofd
-	move a1,v0 #Cargo direccion de v0 en a1= buffertoLoad + bytesWriteAcum
-	lw	a2, OFFSET_BYTES_TO_WRITE ($fp) #Cargo en a2 la direccion [32] del Stack frame. a2 = bytesWriteAcum
-       	li  v0, SYS_write
-   	syscall  # Seria int bytesWrite = write(ofd, bufferToLoad + bytesWriteAcum, bytesToWrite);
-    	sw v0 ,OFFSET_BYTES_WRITE($fp)
-	beq     a3,zero,$continuacionCicloWhile # El registro a3, devuelve 0/1 success/error
+        # int bytesWrite = write(ofd, bufferToLoad + bytesWriteAcum, bytesToWrite);
+        lw	a0,ofd                                         # Cargo ofd en a0. a0 = ofd. Primer parametro de la funcion write.
+	lw	v1,OFFSET_BUFFER_TO_LOAD_W_BUF_IN_OF($fp)      # Carga en el v1 lo guardado en la direccion [OFFSET_BUFFER_TO_LOAD_W_BUF_IN_OF($fp)]
+                                                               # del stack frame, v1=bufferToLoad
+	lw	v0,OFFSET_BYTES_WRITE_ACUM_W_BUF_IN_OF($fp)    # Carga en v0 lo guardado en la direccion [OFFSET_BYTES_WRITE_ACUM_W_BUF_IN_OF($fp)] 
+                                                               # del stack frame.
+	addu    v0,v1,v0                                       # v0 = buffertoLoad + bytesWriteAcum
+	move    a1,v0                                          # Cargo en a1, lo obtenido en el paso anterior. Segundo parametro de la funcion write.
+	lw	a2,OFFSET_BYTES_TO_WRITE_W_BUF_IN_OF($fp)      # Cargo en a2 lo guardado en la direccion [OFFSET_BYTES_TO_WRITE_W_BUF_IN_OF($fp)] 
+                                                               # del Stack frame. Tercer parametro de la funcion write.
+       	li      v0, SYS_write
+   	syscall           # Seria int bytesWrite = write(ofd, bufferToLoad + bytesWriteAcum, bytesToWrite);
+    	sw      v0,OFFSET_BYTES_WRITE_W_BUF_IN_OF($fp)
+	beq     a3,zero,$continuacionCicloWhile        # El registro a3, devuelve 0/1 success/error
     
     	# Hubo error al querer escribir en el archivo => Mensaje de error. 
-    	li      a0,FILE_DESCRIPTOR_STDERR # Cargo en a0 FILE_DESCRIPTOR_STDERR.
+    	li      a0,FILE_DESCRIPTOR_STDERR              # Cargo en a0 FILE_DESCRIPTOR_STDERR.
     	la      a1,MENSAJE_ERROR_WRITE
-    	li      a2,BYTES_MENSAJE_ERROR_WRITE # Cargo en a2 la cantidad de bytes a escribir.
+    	li      a2,BYTES_MENSAJE_ERROR_WRITE           # Cargo en a2 la cantidad de bytes a escribir.
     	li      v0, SYS_write
     	syscall # No controlo error porque sale de por si de la funcion por error.
 
     	## return ERROR_WRITE;
-    	li  v0,ERROR_WRITE  # Cargo codigo de error, que sera el resultado de la funcion.
-    	sw  v0,OFFSET_RETURN ($fp)      # Guardo en la direccion 40($fp) el resultado de la funcion.
+    	li  v0,ERROR_WRITE                             # Cargo codigo de error, que sera el resultado de la funcion.
+    	sw  v0,OFFSET_RETURN_W_BUF_IN_OF($fp)          # Guardo en la direccion OFFSET_RETURN_W_BUF_IN_OF($fp) el resultado de la funcion.
+
     	b  $returnWriteBufferInOFile
 $continuacionCicloWhile:
-        lw	v1,OFFSET_BYTES_ACUM($fp) #Cargo en v1 la direccion [28] del stack frame, v1= zero
-        lw	v0,OFFSET_BYTES_WRITE($fp) #Cargo en v0 la direccion [36] del stack frame, v0=bytesWrite
-        addu	v0,v1,v0 # bytesWriteAcum += bytesWrite , v0 = bytesWriteAcum
-        sw	v0,OFFSET_BYTES_ACUM($fp) #Guardo v0= bytesWriteAcum en posicion [28] Stack Frame
-        lw	v1,OFFSET_Q_BYTES_BUFFER_LOAD($fp) #Cargo en v1 la posicion [68] del stack frame, v1=quantityCharactersInBufferToLoad
-        lw	v0,OFFSET_BYTES_ACUM($fp) #Cargo en v0 la posicion [28] del stack rame , v0=bytesWriteAcum
-        subu	v0,v1,v0    #v0 = bytesToWrite =quantityCharactersInBufferToLoad - bytesWriteAcum;
-        sw	v0, OFFSET_BYTES_TO_WRITE ($fp) # Guardo v0 en la poiscion [32] de memoria , v0=bytesToWrite
-        lw	v0, OFFSET_BYTES_TO_WRITE ($fp) #Cargo en v0 la posicion [32] de memoria , v0 = bytesToWrite
-        bgtz	v0,$inicioCicloWhile  #if (bytesToWrite<= 0) , si es >0 llama a la  funcion $inicioCicloWhile y continua
-        sw	zero,OFFSET_BYTES_DELIVERY($fp) #Guarda zero en posicion [24] de memoria,
-        b	$inicioCicloWhile #Llama a la funcion $inicioCicloWhile, en la comparacion completeDelivery==True
+        # bytesWriteAcum += bytesWrite;
+        lw	v1,OFFSET_BYTES_WRITE_ACUM_W_BUF_IN_OF($fp)     # Cargo en v1 lo guardado en la direccion [OFFSET_BYTES_WRITE_ACUM_W_BUF_IN_OF($fp)]
+                                                                # del stack frame, v1= zero
+        lw	v0,OFFSET_BYTES_WRITE_W_BUF_IN_OF($fp)          # Cargo en v0 lo guardado en la direccion [OFFSET_BYTES_WRITE_W_BUF_IN_OF($fp)] del
+                                                                # stack frame, v0=bytesWrite
+        addu	v0,v1,v0                                        # bytesWriteAcum += bytesWrite , v0 = bytesWriteAcum
+        sw	v0,OFFSET_BYTES_WRITE_ACUM_W_BUF_IN_OF($fp)     # Guardo v0=bytesWriteAcum en posicion [OFFSET_BYTES_WRITE_ACUM_W_BUF_IN_OF($fp)]
+                                                                # del Stack Frame.
+
+        # bytesToWrite = quantityCharactersInBufferToLoad - bytesWriteAcum;
+        lw	v1,OFFSET_QUANTITY_CH_IN_BUFFER_TO_LOAD_W_BUF_IN_OF($fp)     # Cargo en v1 lo guardado en la posicion
+                                                                             # [OFFSET_QUANTITY_CH_IN_BUFFER_TO_LOAD_W_BUF_IN_OF($fp)] 
+                                                                             # del stack frame, v1=quantityCharactersInBufferToLoad
+        lw	v0,OFFSET_BYTES_WRITE_ACUM_W_BUF_IN_OF($fp)                  # Cargo en v0 lo guardado en la posicion
+                                                                             # [OFFSET_BYTES_WRITE_ACUM_W_BUF_IN_OF($fp)] del stack rame,
+                                                                             # v0=bytesWriteAcum
+        subu	v0,v1,v0                                                     # v0 = bytesToWrite = quantityCharactersInBufferToLoad - bytesWriteAcum;
+        sw	v0,OFFSET_BYTES_TO_WRITE_W_BUF_IN_OF($fp)          # Guardo lo de v0 en la poiscion [OFFSET_BYTES_TO_WRITE_W_BUF_IN_OF($fp)] de
+                                                                   # la memoria , v0=bytesToWrite
+
+        # (bytesToWrite <= 0) ?
+        lw	v0,OFFSET_BYTES_TO_WRITE_W_BUF_IN_OF($fp)          # Cargo en v0 la posicion [OFFSET_BYTES_TO_WRITE_W_BUF_IN_OF($fp)] de memoria,
+                                                                   # v0 = bytesToWrite
+        bgtz	v0,$inicioCicloWhile                      # IF(bytesToWrite > 0) goto $inicioCicloWhile
+
+        # bytesToWrite is <= 0
+        sw	zero,OFFSET_COMPLETE_DELIVERY_W_BUF_IN_OF($fp)        # Guarda zero en posicion [OFFSET_COMPLETE_DELIVERY_W_BUF_IN_OF($fp)] de memoria.
+
+        b	$inicioCicloWhile                      # Salto incondicional a $inicioCicloWhile.
 $functionZero:
-        sw	zero,OFFSET_RETURN ($fp)  #Guardo zero en la posicion [40] del Stack frame
+        sw	zero,OFFSET_RETURN_W_BUF_IN_OF($fp)    # Guardo cero (=OKEY) en la posicion [OFFSET_RETURN_W_BUF_IN_OF($FP)] del Stack frame
 $returnWriteBufferInOFile:
-	lw	v0,OFFSET_RETURN ($fp) #Guarda en v0 lo que hay en la direccion [40] del v0, v0=zero
-	move	sp,$fp  # Iguala sp con fp.
-	lw	ra,OFFSET_RA_STACK_FRAME_WRITEINOFILE(sp) # Carga en ra stack[56] para retornar a la funcion llamante.
-	lw	$fp,OFFSET_FP_STACK_FRAME_WRITEINOFILE(sp) # Carga en fp stack[52]
-	addu	sp,sp,STACK_FRAME_WRITEINOFILE # Rompe el stack frante
-	j	ra # Regresa a la funcion llamante
-	.end	writeBufferInOFile
-	.size	writeBufferInOFile, .-writeBufferInOFile
+	lw	v0,OFFSET_RETURN_W_BUF_IN_OF($fp)      # Guarda en v0 lo que hay en la direccion [OFFSET_RETURN_W_BUF_IN_OF($FP)].
+
+	move	sp,$fp 
+	lw	ra,OFFSET_RA_W_BUF_IN_OF(sp)
+	lw	$fp,OFFSET_FP_W_BUF_IN_OF(sp)
+
+	addu	sp,sp,STACK_FRAME_WRITE_BUFFER_IN_OFILE  # Destruye el stack frante
+
+	j	ra                                       # Regresa a la funcion llamante
+
+ 	.end	writeBufferInOFile
+
 	
 #---------------  end writeBufferInOFile ---------------#
 
 #--------------- begin loadDataInBuffer ---------------#
 
+	.text
 	.align	2
 	.globl	loadDataInBuffer
 	.ent	loadDataInBuffer
@@ -386,11 +495,13 @@ loadDataInBuffer:
 #--------------- end loadDataInBuffer ---------------#
 
 #---------------      begin putch     ---------------#
+
+	.text
 	.align	2
 	.globl	putch
 	.ent	putch
 putch:
-	.frame	$fp,STACK_FRAME_PUTCH,ra	# reservo espacio para el stack frame de STACK_FRAME_PUTCH bytes
+	.frame	$fp,STACK_FRAME_PUTCH,ra
 	
 	.set	noreorder
 	.cpload	t9
@@ -398,7 +509,8 @@ putch:
 	
 	# creacion del stack frame
 	subu	sp,sp,STACK_FRAME_PUTCH	
-	.cprestore 16
+
+	.cprestore OFFSET_GP_PUTCH
 	sw	ra,OFFSET_RA_PUTCH(sp)
 	sw	$fp,OFFSET_FP_PUTCH(sp)
 	sw	gp,OFFSET_GP_PUTCH(sp)
@@ -406,51 +518,81 @@ putch:
 	#A partir de aqui uso fp para moverme en lugar de sp
 	move	$fp,sp
 
-	move	v0,a0  #cargo en v0 el valor del registro a0, v0=character
-	sb	v0,OFFSET_CHAR_PUTCH($fp) # Guardo v0= character en poiscion [OFFSET_CHAR_PUTCH] del StackFrame
-	lw	v0,quantityCharactersInBuffer #Cargo en v0= quantityCharactersInBuffer
-	slt	v0,v0,100  # if (quantityCharactersInBuffer < MAX_BUFFER), cargo , devuelve 0/1 en false/True
-	beq	v0,zero,$ifQuantityGreatEqualMaxBuffer # False , v0=0  llama a al funcion $L34
-	lb	v0,OFFSET_CHAR_PUTCH($fp) #Cargo en v0 posicion [OFFSET_CHAR_PUTCH] del stack frame, v0=character
-	move	a0,v0 #Cargo en a0 la posicion del v0,
-	la	t9,loadDataInBuffer #Cargo la etiqueta a la funcion loadDataInBuffer en el registro t9
-	jal	ra,t9 #Llamo a la funcion loadDataInBuffer y guardo la direccion en el return address / loadDataInBuffer(character);
-	sw	zero,OFFSET_ZERO_PUTCH($fp) #Guardo zero en la posicion [OFFSET_ZERO_PUTCH] del stack frame 
-	b	$exitPutch #Salto a funcion $exitPutch
+	move	v0,a0                             # Cargo en v0 el valor del registro a0, v0=character
+	sb	v0,OFFSET_CHARACTER_PUTCH($fp)    # Guardo v0= character en poiscion [OFFSET_CHARACTER_PUTCH] del StackFrame
+	lw	v0,quantityCharactersInBuffer     # Cargo en v0= quantityCharactersInBuffer
+	slt	v0,v0,MAX_BUFFER                  # if (quantityCharactersInBuffer < MAX_BUFFER), cargo , devuelve 0/1 en false/True
+	beq	v0,FALSE,$ifQuantityGreatEqualMaxBuffer # If False, quantityCharactersInBuffer >= MAX_BUFFER, goto
+                                                        # $ifQuantityGreatEqualMaxBuffer
+
+        # quantityCharactersInBuffer is < MAX_BUFFER
+
+        # loadDataInBuffer(character);
+	lb	v0,OFFSET_CHARACTER_PUTCH($fp)    # Cargo en v0 lo guardado en la posicion [OFFSET_CHARACTER_PUTCH] del stack frame,
+                                                  # v0=character
+	move	a0,v0                             # Cargo en a0 la posicion del v0. Primer parametro de la funcion, que es character.
+	la	t9,loadDataInBuffer               # Cargo la direccion a la funcion loadDataInBuffer en el registro t9
+	jal	ra,t9                             # Ejecuto la funcion loadDataInBuffer.
+
+        # return OKEY;
+	sw	zero,OFFSET_RETURN_PUTCH($fp)     # Guardo zero (= OKEY) en la posicion [OFFSET_RETURN_PUTCH] del stack frame 
+
+	b	$exitPutch                        # Salto a la etiqueta $exitPutch
 $ifQuantityGreatEqualMaxBuffer:
-	la	a0,buffer #Cargo address buffer en a0,  ao= buffer
-	lw	a1,quantityCharactersInBuffer  #Cargo quantityCharactersInBuffer word  en a1=quantityCharactersInBuffer
-	la	t9,writeBufferInOFile #Cargo direccion de la funcion writeBufferInOFile en t9
-	jal	ra,t9 #Llamo a la funcion , y guardo la direccion de retorno a esta funcion
-	sw	v0,OFFSET_RETURN_PUTCH($fp) #Guardo el return de la function en la posicion [OFFSET_RETURN_PUTCH] del stack frame 
-	lw	v0,OFFSET_RETURN_PUTCH($fp) #Cargo la posicion [OFFSET_RETURN_PUTCH] del stack frame en v0 = rdo
- 	beq	v0,zero,$executionLoadData #if (rdo != OKEY) , if false, llama a $executionLoadData
-        lw	v0,OFFSET_RETURN_PUTCH($fp) #Cargo la posicion [OFFSET_RETURN_PUTCH] del stack frame en v0 =rdo
-        sw	v0,OFFSET_ZERO_PUTCH($fp) #Guardo v0=rdo en la posicion [OFFSET_ZERO_PUTCH] del stack frame
-        b	$exitPutch #Salgo de la funcion
+        # quantityCharactersInBuffer is >= MAX_BUFFER
+
+        # int rdo = writeBufferInOFile(buffer, quantityCharactersInBuffer);
+	la	a0,buffer                         # Cargo address buffer en a0,  ao= buffer
+	lw	a1,quantityCharactersInBuffer     # Cargo quantityCharactersInBuffer word  en a1=quantityCharactersInBuffer
+	la	t9,writeBufferInOFile             # Cargo direccion de la funcion writeBufferInOFile en t9
+	jal	ra,t9                             # Llamo a la funcion, y guardo la direccion de retorno a esta funcion
+	sw	v0,OFFSET_RDO_PUTCH($fp)          # Guardo el return de la function en la posicion [OFFSET_RDO_PUTCH] del stack frame.
+
+        # (rdo != OKEY) ?
+	lw	v0,OFFSET_RDO_PUTCH($fp)          # Cargo la posicion [OFFSET_RDO_PUTCH] del stack frame en v0 = rdo
+ 	beq	v0,OKEY,$executionLoadData        # if (rdo == OKEY) , if false, salta a $executionLoadData
+
+        # rdo is not equals to OKEY
+        lw	v0,OFFSET_RDO_PUTCH($fp)          # Cargo la posicion [OFFSET_RDO_PUTCH] del stack frame en v0 =rdo
+        sw	v0,OFFSET_RETURN_PUTCH($fp)       # Guardo v0=rdo en la posicion [OFFSET_RETURN_PUTCH] del stack frame
+
+        b	$exitPutch                        # Salgo incondicionalmente a $exitPutch
 $executionLoadData:
-        sw	zero,quantityCharactersInBuffer #Cargo zero en la word quantityCharactersInBuffer
-        lb	v0,OFFSET_CHAR_PUTCH($fp) #Cargo la posicion [OFFSET_CHAR_PUTCH] del stack frame en v0=character
-        move	a0,v0 #Cargo en a0 la posicion de v0
-        la	t9,loadDataInBuffer #Cargo la direccion de loadDataInBuffer en t9
-        jal	ra,t9 #Llamo a la funcion loadDataInBuffer y guardo la direccion en el return address /  loadDataInBuffer(character);
-        sw	zero,OFFSET_ZERO_PUTCH($fp) #Cargo zero en la posicion [OFFSET_ZERO_PUTCH] del stackFrame
+        # rdo is equals to OKEY
+
+        # quantityCharactersInBuffer = 0;
+        sw	zero,quantityCharactersInBuffer   # Cargo zero en la word quantityCharactersInBuffer
+
+        # loadDataInBuffer(character);
+        lb	v0,OFFSET_CHARACTER_PUTCH($fp)    # Cargo la posicion [OFFSET_CHARACTER_PUTCH] del stack frame en v0=character
+        move	a0,v0                             # Cargo en a0 lo guardado en v0 (character).
+        la	t9,loadDataInBuffer               # Cargo la direccion de loadDataInBuffer en t9
+        jal	ra,t9                             # Ejecuto la funcion loadDataInBuffer
+
+        # return OKEY;
+        sw	zero,OFFSET_RETURN_PUTCH($fp)     # Cargo zero (= OKEY) en la posicion [OFFSET_RETURN_PUTCH] del stackFrame
 $exitPutch:
-        lw	v0,OFFSET_ZERO_PUTCH($fp) #Cargo la posicion [OFFSET_ZERO_PUTCH] del stack frame en v0=rdo
-        #Destruccion stack frame
+        lw	v0,OFFSET_RETURN_PUTCH($fp)       # Cargo en v0 lo guardado en la posicion [OFFSET_RETURN_PUTCH] del stack frame,
+                                                  # que es el resultado de la funcion.
+
         move	sp,$fp
         lw	ra,OFFSET_RA_PUTCH(sp)
         lw	$fp,OFFSET_FP_PUTCH(sp)
+
+        #Destruccion stack frame
         addu	sp,sp,STACK_FRAME_PUTCH
+
         j	ra
+
         .end	putch
 #---------------      end putch     ---------------#
 
 #---------------     begin flush    ---------------#
+
+	.text
         .align	2
         .globl	flush
         .ent	flush
-
 flush:
     	.frame	$fp,STACK_FRAME_FLUSH,ra # reservo espacio para el stack frame de STACK_FRAME_FLUSH bytes
     	.set	noreorder
@@ -467,18 +609,18 @@ flush:
 
     	move	$fp,sp
 
-    	lw	v0,quantityCharactersInBuffer #Cargo en v0= quantityCharactersInBuffer
-    	blez	v0,$returnZero # if (quantityCharactersInBuffer > 0) , if v0<=0 llama a
-    	la	a0,buffer #Cargo direccion  buffer en a0
-    	lw	a1,quantityCharactersInBuffer #Cargo word quantityCharactersInBuffer en a1
-    	la	t9,writeBufferInOFile #Cargo etiqueta writeBufferInOFile en t9
-    	jal	ra,t9 #writeBufferInOFile(buffer, quantityCharactersInBuffer)
-    	sw	v0,OFFSET_RES_FLUSH($fp) #Cargo v0 = resultado de la funcion en posicion [OFFSET_RES_FLUSH] del Stack frame
-    	b	$exitFlush #Llamo a la funcion exitFlush
+    	lw	v0,quantityCharactersInBuffer      # Cargo en v0= quantityCharactersInBuffer
+    	blez	v0,$returnZero                     # IF (quantityCharactersInBuffer > 0) , if v0<=0 llama a
+    	la	a0,buffer                          # Cargo direccion  buffer en a0
+    	lw	a1,quantityCharactersInBuffer      # Cargo word quantityCharactersInBuffer en a1
+    	la	t9,writeBufferInOFile              # Cargo etiqueta writeBufferInOFile en t9
+    	jal	ra,t9                              # writeBufferInOFile(buffer, quantityCharactersInBuffer)
+    	sw	v0,OFFSET_RES_FLUSH($fp)           # Cargo v0 = resultado de la funcion en posicion [OFFSET_RES_FLUSH] del Stack frame
+    	b	$exitFlush                         # Llamo a la funcion exitFlush
 $returnZero:
-    	sw	zero,OFFSET_RES_FLUSH($fp) #Guarda zero en la posicion [OFFSET_RES_FLUSH] del stack frame, valor return por la funcion
+    	sw	zero,OFFSET_RES_FLUSH($fp)         # Guarda zero en la posicion [OFFSET_RES_FLUSH] del stack frame, valor return por la funcion
 $exitFlush:
-    	lw	v0,OFFSET_RES_FLUSH($fp) #Carga la posicion [OFFSET_RES_FLUSH] del stack Frame para return
+    	lw	v0,OFFSET_RES_FLUSH($fp)           # Carga la posicion [OFFSET_RES_FLUSH] del stack Frame para return
     	#Destruccion del stack frame
         move	sp,$fp
 	lw	ra,OFFSET_RA_FLUSH(sp)  # Recupero la info del ra.
@@ -875,12 +1017,28 @@ $returnWriteHeader:
 
 #--------------- end  writeHeader  ---------------#
 
+
+# ---------------------------------------------------------------------------- #
+
+## Variables auxiliares
+
+	.data
+
+	.globl	quantityCharactersInBuffer
+	.globl	quantityCharactersInBuffer
+	.section	.bss
+	.align	2
+	.type	quantityCharactersInBuffer, @object
+	.size	quantityCharactersInBuffer, 4
+quantityCharactersInBuffer:
+	.space	4
+
+
 	.comm	fileOutput,4
 
 	.comm	ofd,4
 
-	.comm	buffer,100
-
+	.comm	buffer,MAX_BUFFER
 
 
 ## Mensajes de error
@@ -898,3 +1056,4 @@ MENSAJE_ERROR_CLOSE_FILE:
 
 MENSAJE_ERROR_LOAD_FILE:
 	.ascii	"[Error] No se ha especificado archivo de salida.\n\000"
+
