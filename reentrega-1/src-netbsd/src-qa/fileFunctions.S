@@ -263,7 +263,7 @@ writeBufferInOFile:
 	#Creacion del Stack Frame
 	subu	sp,sp,STACK_FRAME_WRITEINOFILE
 	.cprestore 16
-	sw	ra,OFFSET_RP_STACK_FRAME_WRITEINOFILE(sp)
+	sw	ra,OFFSET_RA_STACK_FRAME_WRITEINOFILE(sp)
 	sw	$fp,OFFSET_FP_STACK_FRAME_WRITEINOFILE(sp)
 	sw	gp,OFFSET_GP_STACK_FRAME_WRITEINOFILE(sp)
 
@@ -333,7 +333,7 @@ $functionZero:
 $returnWriteBufferInOFile:
 	lw	v0,OFFSET_RETURN ($fp) #Guarda en v0 lo que hay en la direccion [40] del v0, v0=zero
 	move	sp,$fp  # Iguala sp con fp.
-	lw	ra,OFFSET_RP_STACK_FRAME_WRITEINOFILE(sp) # Carga en ra stack[56] para retornar a la funcion llamante.
+	lw	ra,OFFSET_RA_STACK_FRAME_WRITEINOFILE(sp) # Carga en ra stack[56] para retornar a la funcion llamante.
 	lw	$fp,OFFSET_FP_STACK_FRAME_WRITEINOFILE(sp) # Carga en fp stack[52]
 	addu	sp,sp,STACK_FRAME_WRITEINOFILE # Rompe el stack frante
 	j	ra # Regresa a la funcion llamante
