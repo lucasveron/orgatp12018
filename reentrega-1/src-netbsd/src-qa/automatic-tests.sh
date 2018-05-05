@@ -3,7 +3,7 @@
 echo "##############################################################################"
 echo "########################## Tests automaticos  ################################"
 echo "##############################################################################"
-
+echo
 echo "Se guardaran los archivos resultantes de los tests en el directorio ./outputs-automatic-tests"
 
 if [ -d "./outputs-automatic-tests" ]
@@ -24,7 +24,7 @@ echo "Se genero el archivo prueba1.pgm, para lo cual se especifico center, w, he
 ./tp1 --resolution 70x70 -c 0.5+0.5i --width 10 -H 30 -o ./outputs-automatic-tests/prueba2.pgm -m mips32
 echo "Se genero el archivo prueba2.pgm, para lo cual se especifico resolution, c, width, H y o."
 
-./tp1 -c 0.5+0.5025863i --width 5 -H 8 -o ./outputs-automatic-tests/prueba3.pgm -m mips32
+./tp1 -r 10x10 -c 0.5+0.5025863i --width 5 -H 8 -o ./outputs-automatic-tests/prueba3.pgm -m mips32
 echo "Se genero el archivo prueba3.pgm, para lo cual se especifico c, width, H y o."
 
 ./tp1 --resolution 100x300 --width 10 -H 5 -o ./outputs-automatic-tests/prueba4.pgm -m mips32
@@ -50,6 +50,21 @@ echo "Se genero el archivo dos.pgm, para lo cual se especifico c, w, H y o."
 
 ./tp1 -r 20x20 -m mips32 -o ./outputs-automatic-tests/unoMips32.pgm -m mips32
 echo "Se genero el archivo unoMips32.pgm, para lo cual se especifico m y o"
+echo
+echo "##############################################################################"
+echo "################ COMPARACION DE METODOS DE EJECUCION #########################"
+echo "##############################################################################"
+echo
+./tp1 -r 10x10 -m mips32 -o ./outputs-automatic-tests/comp_mips32_1.pgm
+./tp1 -r 10x10 -m generic -o ./outputs-automatic-tests/comp_generic_1.pgm
+
+varDiff = $(diff ./outputs-automatic-tests/comp_mips32_1.pgm ./outputs-automatic-tests/comp_generic_1.pgm 2>&1)
+if [ "$varDiff" = "" ];
+ then echo "Ejecucion Diff .......... [OK]";
+else
+ echo "Ejecucion Diff .......... [ERROR] - Resultado obtenido: ";
+ echo $varDiff
+fi
 
 echo "###----------###    FIN de la generacion de imagenes automaticamente.    ###----------###"
 echo
