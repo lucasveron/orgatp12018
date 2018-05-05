@@ -29,6 +29,18 @@
 #define OFFSET_FP_LOAD_DATA_BUFFER 20
 #define OFFSET_GP_LOAD_DATA_BUFFER 16
 #define OFFSET_STORE_BYTE 8
+#define STACK_FRAME_PUTCH 48
+#define OFFSET_RA_PUTCH 40
+#define OFFSET_FP_PUTCH 36
+#define OFFSET_GP_PUTCH 32
+#define OFFSET_ZERO_PUTCH 24
+#define OFFSET_RETURN_PUTCH 20
+#define OFFSET_CHAR_PUTCH 16
+#define STACK_FRAME_FLUSH 40
+#define OFFSET_RA_FLUSH 32
+#define OFFSET_FP_FLUSH 28
+#define OFFSET_GP_FLUSH 24
+#define OFFSET_RES_FLUSH 16
 
 #define OFFSET_RA_W_H 104
 #define OFFSET_FP_W_H 100
@@ -214,8 +226,8 @@ $setOutputNull:
 	sw	zero,fileOutput # Pongo un 0 en la dirección del fileOutput
 $returnCloseFile:
 	move	sp,$fp     # Iguala sp con fp.
-	lw	ra,OFFSET_RA_CLOSE_FILE(sp)  # Carga en ra stack[24] para retornar a la funcion llamante.
-	lw	$fp,OFFSET_FP_CLOSE_FILE(sp) # Carga en fp stack[20]. ???
+	lw	ra,OFFSET_RA_CLOSE_FILE(sp)  # Carga en ra stack[OFFSET_RA_CLOSE_FILE] para retornar a la funcion llamante.
+	lw	$fp,OFFSET_FP_CLOSE_FILE(sp) # Carga en fp stack[OFFSET_FP_CLOSE_FILE].
 	addu	sp,sp,STACK_FRAME_CLOSE_FILE   # Rompe el stack frame.
 	j	ra         # Regresa a la funcion llamante.
 	.end	closeFile
@@ -367,80 +379,84 @@ loadDataInBuffer:
 	.end	loadDataInBuffer
 #--------------- end loadDataInBuffer ---------------#
 
+#---------------      begin putch     ---------------#
 	.align	2
 	.globl	putch
 	.ent	putch
 putch:
-	.frame	$fp,56,ra	# reservo espacio para el stack frame de 56 bytes
+	.frame	$fp,STACK_FRAME_PUTCH,ra	# reservo espacio para el stack frame de STACK_FRAME_PUTCH bytes
 	
 	.set	noreorder
 	.cpload	t9
 	.set	reorder
 	
 	# creacion del stack frame
-	subu	sp,sp,56
+	subu	sp,sp,STACK_FRAME_PUTCH	
 	.cprestore 16
-	sw	ra,48(sp)
-	sw	$fp,44(sp)
-	sw	gp,40(sp)
+	sw	ra,OFFSET_RA_PUTCH(sp)
+	sw	$fp,OFFSET_FP_PUTCH(sp)
+	sw	gp,OFFSET_GP_PUTCH(sp)
 
 	#A partir de aqui uso fp para moverme en lugar de sp
 	move	$fp,sp
 
 	move	v0,a0  #cargo en v0 el valor del registro a0, v0=character
-	sb	v0,24($fp) # Guardo v0= character en poiscion [24] del StackFrame
+	sb	v0,OFFSET_CHAR_PUTCH($fp) # Guardo v0= character en poiscion [OFFSET_CHAR_PUTCH] del StackFrame
 	lw	v0,quantityCharactersInBuffer #Cargo en v0= quantityCharactersInBuffer
 	slt	v0,v0,100  # if (quantityCharactersInBuffer < MAX_BUFFER), cargo , devuelve 0/1 en false/True
 	beq	v0,zero,$ifQuantityGreatEqualMaxBuffer # False , v0=0  llama a al funcion $L34
-	lb	v0,24($fp) #Cargo en v0 posicion [24] del stack frame, v0=character
+	lb	v0,OFFSET_CHAR_PUTCH($fp) #Cargo en v0 posicion [OFFSET_CHAR_PUTCH] del stack frame, v0=character
 	move	a0,v0 #Cargo en a0 la posicion del v0,
 	la	t9,loadDataInBuffer #Cargo la etiqueta a la funcion loadDataInBuffer en el registro t9
 	jal	ra,t9 #Llamo a la funcion loadDataInBuffer y guardo la direccion en el return address / loadDataInBuffer(character);
-	sw	zero,32($fp) #Guardo zero en la posicion [32] del stack frame 
+	sw	zero,OFFSET_ZERO_PUTCH($fp) #Guardo zero en la posicion [OFFSET_ZERO_PUTCH] del stack frame 
 	b	$exitPutch #Salto a funcion $exitPutch
 $ifQuantityGreatEqualMaxBuffer:
 	la	a0,buffer #Cargo address buffer en a0,  ao= buffer
 	lw	a1,quantityCharactersInBuffer  #Cargo quantityCharactersInBuffer word  en a1=quantityCharactersInBuffer
 	la	t9,writeBufferInOFile #Cargo direccion de la funcion writeBufferInOFile en t9
 	jal	ra,t9 #Llamo a la funcion , y guardo la direccion de retorno a esta funcion
-	sw	v0,28($fp) #Guardo el return de la function en la posicion [28] del stack frame 
-	lw	v0,28($fp) #Cargola posicion [28] del stack frame en v0 = rdo
+	sw	v0,OFFSET_RETURN_PUTCH($fp) #Guardo el return de la function en la posicion [OFFSET_RETURN_PUTCH] del stack frame 
+	lw	v0,OFFSET_RETURN_PUTCH($fp) #Cargo la posicion [OFFSET_RETURN_PUTCH] del stack frame en v0 = rdo
  	beq	v0,zero,$executionLoadData #if (rdo != OKEY) , if false, llama a $executionLoadData
-        lw	v0,28($fp) #Cargo la posicion [28] del stack frame en v0 =rdo
-        sw	v0,32($fp) #Guardo v0=rdo en la posicion [32] del stack frame
+        lw	v0,OFFSET_RETURN_PUTCH($fp) #Cargo la posicion [OFFSET_RETURN_PUTCH] del stack frame en v0 =rdo
+        sw	v0,OFFSET_ZERO_PUTCH($fp) #Guardo v0=rdo en la posicion [OFFSET_ZERO_PUTCH] del stack frame
         b	$exitPutch #Salgo de la funcion
 $executionLoadData:
         sw	zero,quantityCharactersInBuffer #Cargo zero en la word quantityCharactersInBuffer
-        lb	v0,24($fp) #Cargo la poiscion [24] del stack frame en v0=character
+        lb	v0,OFFSET_CHAR_PUTCH($fp) #Cargo la posicion [OFFSET_CHAR_PUTCH] del stack frame en v0=character
         move	a0,v0 #Cargo en a0 la posicion de v0
         la	t9,loadDataInBuffer #Cargo la direccion de loadDataInBuffer en t9
         jal	ra,t9 #Llamo a la funcion loadDataInBuffer y guardo la direccion en el return address /  loadDataInBuffer(character);
-        sw	zero,32($fp) #Cargo zero en la posicion [32] del stackFrame
+        sw	zero,OFFSET_ZERO_PUTCH($fp) #Cargo zero en la posicion [OFFSET_ZERO_PUTCH] del stackFrame
 $exitPutch:
-        lw	v0,32($fp) #Cargo la posocion [32] del stack frame en v0=rdo
+        lw	v0,OFFSET_ZERO_PUTCH($fp) #Cargo la posicion [OFFSET_ZERO_PUTCH] del stack frame en v0=rdo
         #Destruccion stack frame
         move	sp,$fp
-        lw	ra,48(sp)
-        lw	$fp,44(sp)
-        addu	sp,sp,56
+        lw	ra,OFFSET_RA_PUTCH(sp)
+        lw	$fp,OFFSET_FP_PUTCH(sp)
+        addu	sp,sp,STACK_FRAME_PUTCH
         j	ra
         .end	putch
+#---------------      end putch     ---------------#
+
+#---------------     begin flush    ---------------#
         .align	2
         .globl	flush
         .ent	flush
 
 flush:
-    	.frame	$fp,48,ra # reservo espacio para el stack frame de 48 bytes
+    	.frame	$fp,STACK_FRAME_FLUSH,ra # reservo espacio para el stack frame de STACK_FRAME_FLUSH bytes
     	.set	noreorder
     	.cpload	t9
     	.set	reorder
 
     	# creacion del stack frame
-    	subu	sp,sp,48
+    	subu	sp,sp,STACK_FRAME_FLUSH
 	.cprestore 16
-    	sw	ra,40(sp)
-    	sw	$fp,36(sp)
-    	sw	gp,32(sp)
+    	sw	ra,OFFSET_RA_FLUSH(sp)
+    	sw	$fp,OFFSET_FP_FLUSH(sp)
+    	sw	gp,OFFSET_GP_FLUSH(sp)
     	#A partir de aqui uso fp para moverme en lugar de sp
 
     	move	$fp,sp
@@ -451,20 +467,20 @@ flush:
     	lw	a1,quantityCharactersInBuffer #Cargo word quantityCharactersInBuffer en a1
     	la	t9,writeBufferInOFile #Cargo etiqueta writeBufferInOFile en t9
     	jal	ra,t9 #writeBufferInOFile(buffer, quantityCharactersInBuffer)
-    	sw	v0,24($fp) #Cargo v0 = resultado de la funcion en posicion [24] del Stack frame
+    	sw	v0,OFFSET_RES_FLUSH($fp) #Cargo v0 = resultado de la funcion en posicion [OFFSET_RES_FLUSH] del Stack frame
     	b	$exitFlush #Llamo a la funcion exitFlush
 $returnZero:
-    	sw	zero,24($fp) #Guarda zero en la posicion [24] del stack frame, valor return por la funcion
+    	sw	zero,OFFSET_RES_FLUSH($fp) #Guarda zero en la posicion [OFFSET_RES_FLUSH] del stack frame, valor return por la funcion
 $exitFlush:
-    	lw	v0,24($fp) #Carga la posicion [24] del stack Frame para return
+    	lw	v0,OFFSET_RES_FLUSH($fp) #Carga la posicion [OFFSET_RES_FLUSH] del stack Frame para return
     	#Destruccion del stack frame
         move	sp,$fp
-	lw	ra,40(sp)
-	lw	$fp,36(sp)
-	addu	sp,sp,48
+	lw	ra,OFFSET_RA_FLUSH(sp)  # Recupero la info del ra.
+	lw	$fp,OFFSET_FP_FLUSH(sp) # Recupero info fp antes de retornar.
+	addu	sp,sp,STACK_FRAME_FLUSH
 	j	ra
 	.end	flush
-
+#---------------    begin flush   ---------------#
 
 ##-----	writeHeader -----##
 
