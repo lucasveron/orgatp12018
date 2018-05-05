@@ -483,7 +483,7 @@ writeHeader:
                                                 # que viene en a0, y es sizeY.
 	sw	a1,OFFSET_SIZE_X_W_H($fp)       # Guardo en la dir OFFSET_SIZE_X_W_H($fp), el segundo parametro
                                                 # que viene en a1, y es sizeX.
-	sw	a2,OFFSET_SHADES_W_H($fp)  # Guardo en la dir OFFSET_SHADES_W_H($fp), el tercer 
+	sw	a2,OFFSET_SHADES_W_H($fp)  	# Guardo en la dir OFFSET_SHADES_W_H($fp), el tercer 
                                                 # parametro que viene en a2, y es shades.
 
         # character chY = convertIntToCharacter(sizeY);
@@ -646,15 +646,16 @@ $loopWriteHeaderChYInWriteHeader:
         # for (i = 0; i < chY.length; i++)
 
         # (i < chY.length)?
-	lw	v0,80($fp)      # Cargo en v0 lo guardado en la direccion 80($fp), que representa a la variable i.
-	lw	v1,36($fp)      # Cargo en v0 lo guardado en la direccion 36($fp), que representa la 
-                                # variable chY.length.
-	slt	v0,v0,v1        # Guardo en v0 TRUE si (i < chX.length), sino guardo FALSE.
-	bne	v0,FALSE,$insideOfTheLoopWriteHeaderChY # Si (i < chY.length) es no es FALSE, o sea 
-                                                        # es TRUE, goto $insideOfTheLoopWriteHeaderChY.
+	lw	v0,OFFSET_I_W_H($fp)                # Cargo en v0 lo guardado en la direccion OFFSET_I_W_H($fp), 
+                                                    # que representa a la variable i.
+	lw	v1,OFFSET_CH_Y_LENGHT_W_H($fp)      # Cargo en v0 lo guardado en la direccion 36($fp), que representa la 
+                                                    # variable chY.length.
+	slt	v0,v0,v1                            # Guardo en v0 TRUE si (i < chX.length), sino guardo FALSE.
+	bne	v0,FALSE,$insideOfTheLoopWriteHeaderChY   # Si (i < chY.length) es no es FALSE, o sea 
+                                                          # es TRUE, goto $insideOfTheLoopWriteHeaderChY.
 
         # i is >= chy.length
-	b	$loadLineBreakInWriteHeader  # Salto incondicional a $loadLineBreakInWriteHeader.
+	b	$loadLineBreakInWriteHeader         # Salto incondicional a $loadLineBreakInWriteHeader.
 $insideOfTheLoopWriteHeaderChY:
         # bufferToLoad[idx] = chY.data[i];
 
@@ -718,7 +719,7 @@ $loadLineBreakInWriteHeader:
                                             # guardo el nuevo valor de idx.
 
         # i = 0
-	sw	zero,OFFSET_I_W_H($fp)    # Esto se hace para hacer el loop siguiente.
+	sw	zero,OFFSET_I_W_H($fp)      # Esto se hace para hacer el loop siguiente.
 $loopChShadesInWriteHeader:
         # for (i = 0; i < chShades.length; i++)
 
@@ -727,12 +728,12 @@ $loopChShadesInWriteHeader:
                                                          # que representa la variable i.
 	lw	v1,OFFSET_CH_SHADES_LENGHT_W_H($fp)      # Cargo en v0 lo guardado en la direccion OFFSET_CH_SHADES_LENGHT_W_H($fp),
                                                          # que representa la variable chShades.length.
-	slt	v0,v0,v1        # Guardo en v0 TRUE si (i < chShades.length), sino guardo FALSE.
-	bne	v0,FALSE,$insideOfTheLoopChShadesInWriteHeader # Si (i < chShades.length) es no es FALSE, o sea
-                                                               # es TRUE, goto $insideOfTheLoopChShadesInWriteHeader.
+	slt	v0,v0,v1                                 # Guardo en v0 TRUE si (i < chShades.length), sino guardo FALSE.
+	bne	v0,FALSE,$insideOfTheLoopChShadesInWriteHeader   # Si (i < chShades.length) es no es FALSE, o sea
+                                                                 # es TRUE, goto $insideOfTheLoopChShadesInWriteHeader.
 
         # i is >= chShades.length
-	b	$loadLineBreakFinalInWriteHeader # Salto incondicional a $loadLineBreakFinalInWriteHeader.
+	b	$loadLineBreakFinalInWriteHeader         # Salto incondicional a $loadLineBreakFinalInWriteHeader.
 $insideOfTheLoopChShadesInWriteHeader:
         # bufferToLoad[idx] = chShades.data[i];
 

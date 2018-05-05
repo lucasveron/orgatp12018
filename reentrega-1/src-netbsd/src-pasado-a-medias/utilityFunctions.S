@@ -37,7 +37,7 @@ convertIntToCharacter:
 	# Stack frame creation
 	subu	sp,sp,STACK_FRAME_CONVERT_INT_TO_CH
 
-	.cprestore 0
+	.cprestore  OFFSET_GP_C_I_TO_CH
 	sw	$fp,OFFSET_FP_C_I_TO_CH(sp)
 	sw	gp,OFFSET_GP_C_I_TO_CH(sp)
 
