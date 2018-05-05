@@ -419,7 +419,8 @@ $continuacionCicloWhile:
         bgtz	v0,$inicioCicloWhile                      # IF(bytesToWrite > 0) goto $inicioCicloWhile
 
         # bytesToWrite is <= 0
-        sw	zero,OFFSET_COMPLETE_DELIVERY_W_BUF_IN_OF($fp)        # Guarda zero en posicion [OFFSET_COMPLETE_DELIVERY_W_BUF_IN_OF($fp)] de memoria.
+        li      v0,TRUE
+        sw	v0,OFFSET_COMPLETE_DELIVERY_W_BUF_IN_OF($fp)        # Guarda TRUE en posicion [OFFSET_COMPLETE_DELIVERY_W_BUF_IN_OF($fp)] de memoria.
 
         b	$inicioCicloWhile                      # Salto incondicional a $inicioCicloWhile.
 $functionZero:
