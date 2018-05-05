@@ -49,7 +49,7 @@ loadPixelBrightness:
 	# Stack frame creation
 	subu	sp,sp,STACK_FRAME_LOAD_PIXEL_BRIGHTNESS
 
-	.cprestore 48
+	.cprestore OFFSET_GP_L_P_B
 	sw	ra,OFFSET_RA_L_P_B(sp)
 	sw	$fp,OFFSET_FP_L_P_B(sp)
 	sw	gp,OFFSET_GP_L_P_B(sp)
@@ -182,7 +182,7 @@ mips32_plot:
 	# Stack frame creation
 	subu	sp,sp,STACK_FRAME_MIPS32_PLOT
 
-	.cprestore 64
+	.cprestore OFFSET_GP_M_32_P
 	sw	ra,OFFSET_RA_M_32_P(sp)
 	sw	$fp,OFFSET_FP_M_32_P(sp)
 	sw	gp,OFFSET_GP_M_32_P(sp)

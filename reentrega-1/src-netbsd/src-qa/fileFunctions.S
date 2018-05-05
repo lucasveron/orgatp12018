@@ -465,44 +465,85 @@ $exitFlush:
 	.globl	writeHeader
 	.ent	writeHeader
 writeHeader:
-	.frame	$fp,120,ra		# vars= 80, regs= 3/0, args= 16, extra= 8
-	.mask	0xd0000000,-8
-	.fmask	0x00000000,0
+	.frame	$fp,STACK_FRAME_WRITE_HEADER,ra
 	.set	noreorder
 	.cpload	t9
 	.set	reorder
-	subu	sp,sp,120
-	.cprestore 16
-	sw	ra,112(sp)
-	sw	$fp,108(sp)
-	sw	gp,104(sp)
+
+        # Stack frame creation
+	subu	sp,sp,STACK_FRAME_WRITE_HEADER
+
+	.cprestore OFFSET_GP_W_H        
+	sw	ra,OFFSET_RA_W_H(sp)
+	sw	$fp,OFFSET_FP_W_H(sp)
+	sw	gp,OFFSET_GP_W_H(sp)
+
+        # de aqui al fin de la funcion uso $fp en lugar de sp.
 	move	$fp,sp
-	sw	a0,120($fp)
-	sw	a1,124($fp)
-	sw	a2,128($fp)
-	sw	sp,92($fp)
-	addu	a0,$fp,24
-	lw	a1,120($fp)
-	la	t9,convertIntToCharacter
-	jal	ra,t9
-	addu	v0,$fp,40
-	move	a0,v0
-	lw	a1,124($fp)
-	la	t9,convertIntToCharacter
-	jal	ra,t9
-	addu	v0,$fp,56
-	move	a0,v0
-	lw	a1,128($fp)
-	la	t9,convertIntToCharacter
-	jal	ra,t9
-	lw	v1,52($fp)
-	lw	v0,36($fp)
-	addu	v1,v1,v0
-	lw	v0,68($fp)
-	addu	v0,v1,v0
-	addu	v0,v0,6
-	sw	v0,72($fp)
-	lw	v0,72($fp)
+
+        # Parametro
+        # int writeHeader(unsigned int sizeY, unsigned int sizeX, unsigned int shades)
+	sw	a0,OFFSET_SIZE_Y_W_H($fp)       # Guardo en la dir OFFSET_SIZE_Y_W_H($fp), el primer parametro
+                                                # que viene en a0, y es sizeY.
+	sw	a1,OFFSET_SIZE_X_W_H($fp)       # Guardo en la dir OFFSET_SIZE_X_W_H($fp), el segundo parametro
+                                                # que viene en a1, y es sizeX.
+	sw	a2,OFFSET_SHADES_W_H($fp)  	# Guardo en la dir OFFSET_SHADES_W_H($fp), el tercer 
+                                                # parametro que viene en a2, y es shades.
+
+        # character chY = convertIntToCharacter(sizeY);
+	sw	sp,OFFSET_SP_W_H($fp)             # Guardo sp en la direccion OFFSET_SP_W_H($fp).
+	addu	a0,$fp,OFFSET_CH_Y_DATA_W_H       # Cargo en a0 la direccion en donde espero se cargue el resultado de la
+                                                  # ejecucion de la funcion convertIntToCharacter (chY), la cual es 
+                                                  # $fp + OFFSET_CH_Y_DATA_W_H.
+                                                  # Este es el primer parametro que recibe la funcion.
+	lw	a1,OFFSET_SIZE_Y_W_H($fp)         # Cargo en a1 lo guardado en la direccion OFFSET_SIZE_Y_W_H($fp), que es 
+                                                  # sizeY. Este es el segundo parametro que recibe la funcion convertIntToCharacter.
+	la	t9,convertIntToCharacter          # Cargo en t9 la direccion de la funcion convertIntToCharacter.
+	jal	ra,t9                             # Ejecuto la funcion convertIntToCharacter.
+
+
+        # character chX = convertIntToCharacter(sizeX);
+        addu	a0,$fp,OFFSET_CH_X_DATA_W_H       # Cargo en a0 la direccion en donde espero se cargue el resultado de la
+                                                  # ejecucion de la funcion convertIntToCharacter (chX), la cual es 
+                                                  # $fp + OFFSET_CH_X_DATA_W_H.
+                                                  # Este es el primer parametro que recibe la funcion.
+	lw	a1,OFFSET_SIZE_X_W_H($fp)         # Cargo en a1 lo guardado en la direccion OFFSET_SIZE_X_W_H($fp), que es
+                                                  # sizeX. Este es el segundo parametro que recibe la funcion convertIntToCharacter.
+	la	t9,convertIntToCharacter          # Cargo en t9 la direccion de la funcion convertIntToCharacter.
+	jal	ra,t9                             # Ejecuto la funcion convertIntToCharacter.
+
+
+        # character chShades = convertIntToCharacter(shades);
+        addu	a0,$fp,OFFSET_CH_SHADES_DATA_W_H       # Cargo en a0 la direccion en donde espero se cargue el resultado de la
+                                                       # ejecucion de la funcion convertIntToCharacter (chShades), la cual es 
+                                                       # $fp + OFFSET_CH_SHADES_DATA_W_H.
+                                                       # Este es el primer parametro que recibe la funcion.
+	lw	a1,OFFSET_SHADES_W_H($fp)              # Cargo en a1 lo guardado en la direccion OFFSET_SHADES_W_H($fp), que 
+                                                       # es shades. Este es el segundo parametro que recibe la funcion convertIntToCharacter.
+	la	t9,convertIntToCharacter               # Cargo en t9 la direccion de la funcion convertIntToCharacter.
+	jal	ra,t9                                  # Ejecuto la funcion convertIntToCharacter.
+
+
+        # Quiero hacer: int quantityCharactersInBufferToLoad = 6 + chX.length + chY.length + chShades.length;
+
+	lw	v1,OFFSET_CH_X_LENGHT_W_H($fp)      # Cargo en v1 lo guardado en la direccion OFFSET_CH_X_LENGHT_W_H($fp),
+                                                    # que representa la variable chX.length.
+	lw	v0,OFFSET_CH_Y_LENGHT_W_H($fp)      # Cargo en v0 lo guardado en la direccion OFFSET_CH_Y_LENGHT_W_H($fp),
+                                                    # que representa la variable chY.length.
+	addu	v1,v1,v0                            # Hago chX.length + chY.length, y guardo el resultado en v1.
+	lw	v0,OFFSET_CH_SHADES_LENGHT_W_H($fp) # Cargo en v0 lo guardado en la direccion OFFSET_CH_SHADES_LENGHT_W_H($fp),
+                                                    # que representa la variable chShades.length.
+	addu	v0,v1,v0        # Hago (chX.length + chY.length) + chShades.length, y guardo el resultado en v0.
+	addu	v0,v0,6         # Hago efectivamente la suma: 6 + chX.length + chY.length + chShades.length; y 
+                                # cargo el resultado en v0.
+	sw	v0,OFFSET_QUANTITY_CH_IN_BUF_TO_LOAD_W_H($fp)    # Guardo el resultado de la suma en la direccion 
+                                                                 # OFFSET_QUANTITY_CH_IN_BUF_TO_LOAD_W_H($fp), que representa la
+                                                                 # variable quantityCharactersInBufferToLoad.
+
+        # char bufferToLoad [quantityCharactersInBufferToLoad];
+	lw	v0,OFFSET_QUANTITY_CH_IN_BUF_TO_LOAD_W_H($fp)    # Cargo en v0 lo guardado en la direccion 
+                                                                 # OFFSET_QUANTITY_CH_IN_BUF_TO_LOAD_W_H($fp), que representa la variable
+                                                                 # quantityCharactersInBufferToLoad.
 	addu	v0,v0,-1
 	addu	v0,v0,1
 	addu	v0,v0,7
@@ -510,133 +551,294 @@ writeHeader:
 	sll	v0,v0,3
 	subu	sp,sp,v0
 	addu	v0,sp,16
-	sw	v0,96($fp)
-	li	v0,80			# 0x50
-	lw	v1,96($fp)
+	sw	v0,OFFSET_BUFF_TO_LOAD_W_H($fp)      # Guardo en la dir OFFSET_BUFF_TO_LOAD_W_H($fp) bufferToLoad 
+                                                     # (la direccion al primer elemento del array).
+
+        # bufferToLoad[0] = 'P';
+	li	v0,80                                # Cargo en v0 el caracter P (80 en ascii).
+	lw	v1,OFFSET_BUFF_TO_LOAD_W_H($fp)      # Cargo en v1 bufferToLoad (la direccion al primer elemento del array).
+	sb	v0,0(v1)                             # Guardo en la primer posicion del array, el caracter P (guardado en v0).
+
+        # bufferToLoad[1] = '2';
+	li	v0,50                                # Cargo en v0 el caracter 2 (50 en ascii).
+	lw	a0,OFFSET_BUFF_TO_LOAD_W_H($fp)      # Cargo en a0 bufferToLoad (la direccion al primer elemento del array). 
+	sb	v0,1(a0)                             # Guardo en la segunda posicion del array, el caracter 2 (guardado en v0).
+
+        # bufferToLoad[2] = '\n';
+	li	v0,10                                # Cargo en v0 el caracter \n (10 en ascii).
+	lw	v1,OFFSET_BUFF_TO_LOAD_W_H($fp)      # Cargo en v1 bufferToLoad (la direccion al primer elemento del array).
+	sb	v0,2(v1)                             # Guardo en la tercera posicion del array, el caracter \n (guardado en v0).
+
+        # int idx = 3;
+	li	v0,3                        # Cargo en v0 el inmediato 3.
+	sw	v0,OFFSET_IDX_W_H($fp)      # Guardo en la direccion OFFSET_IDX_W_H($fp) la variable idx inicializada en 3.
+
+        # int i; i = 0;
+	sw	zero,OFFSET_I_W_H($fp)      # Guardo en la direccion OFFSET_I_W_H($fp) la variable i inicializada en 0.
+$loopWriteHeaderChXInWriteHeader:
+        # for (i = 0; i < chX.length; i++) 
+
+        # (i < chX.length) ?
+	lw	v0,OFFSET_I_W_H($fp)                # Cargo en v0 la variable i, que esta en la direccion OFFSET_I_W_H($fp).
+	lw	v1,OFFSET_CH_X_LENGHT_W_H($fp)      # Cargo en v1 la variable chX.length, que esta en la direccion 
+                                                    # OFFSET_CH_X_LENGHT_W_H($fp).
+	slt	v0,v0,v1                            # Guardo en v0 TRUE si (i < chX.length), sino guardo FALSE.
+	bne	v0,FALSE,$insideOfTheLoopWriteHeaderChX # Si (i < chX.length) es no es FALSE, o sea 
+                                                        # es TRUE, goto $insideOfTheLoopWriteHeaderChX.
+
+        # i is >= chX.length
+	b	$loadSpaceInWriteHeader   # Salto incondicional a $loadSpaceInWriteHeader.
+$insideOfTheLoopWriteHeaderChX:
+        # bufferToLoad[idx] = chX.data[i];
+
+        # bufferToLoad[idx]
+	lw	v0,OFFSET_IDX_W_H($fp)               # Cargo en v0 lo guardado en la direccion OFFSET_IDX_W_H($fp), que 
+                                                     # representa la variable idx.
+	lw	v1,OFFSET_BUFF_TO_LOAD_W_H($fp)      # Cargo en v1 lo guardado en la direccion OFFSET_BUFF_TO_LOAD_W_H($fp),
+                                                     # que representa la variable bufferToLoad.
+	addu	a0,v1,v0        # Me muevo sobre el array. Hago bufferToLoad + idx. Cargo la nueva direccion
+                                # sobre bufferToLoad en a0.
+
+        # chX.data[i]
+	addu	v1,$fp,OFFSET_CH_X_DATA_W_H        # Guardo en v1 la direccion resultante de hacer $fp+OFFSET_CH_X_DATA_W_H.
+                                                   # Representa la direccion de la variable chX.data.
+	lw	v0,OFFSET_I_W_H($fp)               # Cargo en v0 lo guardado en la direccion OFFSET_I_W_H($fp), que representa
+                                                   # a la variable i.
+	addu	v0,v1,v0        # Me muevo sobre el array. Hago chX.data + i. Cargo la nueva direccion
+                                # sobre chX.data en v0.
+	lbu	v0,0(v0)        # Cargo en v0 lo guardado en la direccion que tiene v0. O sea, hago chX.data[i] (un byte).
+	sb	v0,0(a0)        # Guardo en la direccion guardada en a0 (bufferToLoad[idx]), lo obtenido en el paso
+                                # anterior. O sea, hago efectivamente: bufferToLoad[idx] = chX.data[i];
+
+        # idx ++;
+	lw	v0,OFFSET_IDX_W_H($fp)      # Cargo en v0 lo guardado en la direccion OFFSET_IDX_W_H($fp), que representa la variable idx.
+	addu	v0,v0,1                     # Incremento en 1 unidad a lo cargado en v0. Guardo resultado en v0.
+	sw	v0,OFFSET_IDX_W_H($fp)      # Guardo en la direccion OFFSET_IDX_W_H($fp) el incremento. O sea, guardo el nuevo valor de idx.
+
+        # i++
+	lw	v0,OFFSET_I_W_H($fp)      # Cargo en v0 lo guardado en la direccion OFFSET_I_W_H($fp), que representa a la variable i.
+	addu	v0,v0,1                   # Incremento en 1 unidad a lo cargado en v0. Guardo resultado en v0.
+	sw	v0,OFFSET_I_W_H($fp)      # Guardo en la direccion OFFSET_I_W_H($fp) el incremento. O sea, guardo el nuevo valor de i.
+	b	$loopWriteHeaderChXInWriteHeader # Salto incondicional a $loopWriteHeaderChXInWriteHeader.
+$loadSpaceInWriteHeader:
+        # bufferToLoad[idx] = ' ';
+
+        # bufferToLoad[idx]
+	lw	v0,OFFSET_IDX_W_H($fp)               # Cargo en v0 lo guardado en la direccion OFFSET_IDX_W_H($fp), que
+                                                     # representa la variable idx.
+	lw	a0,OFFSET_BUFF_TO_LOAD_W_H($fp)      # Cargo en a0 lo guardado en la direccion OFFSET_BUFF_TO_LOAD_W_H($fp), que
+                                                     # representa la variable bufferToLoad.
+	addu	v1,a0,v0        # Me muevo sobre el array. Hago bufferToLoad + idx. Cargo la nueva direccion
+                                # sobre bufferToLoad en v1.
+
+        # ' ' (32 en ascii)
+	li	v0,32           # Cargo en v0 el caracter ' '
+
+        # Hago efectivamente: bufferToLoad[idx] = ' ';
 	sb	v0,0(v1)
-	li	v0,50			# 0x32
-	lw	a0,96($fp)
-	sb	v0,1(a0)
-	li	v0,10			# 0xa
-	lw	v1,96($fp)
-	sb	v0,2(v1)
-	li	v0,3			# 0x3
-	sw	v0,76($fp)
-	sw	zero,80($fp)
-$L39:
-	lw	v0,80($fp)
-	lw	v1,52($fp)
-	slt	v0,v0,v1
-	bne	v0,zero,$L42
-	b	$L40
-$L42:
-	lw	v0,76($fp)
-	lw	v1,96($fp)
-	addu	a0,v1,v0
-	addu	v1,$fp,40
-	lw	v0,80($fp)
-	addu	v0,v1,v0
-	lbu	v0,0(v0)
-	sb	v0,0(a0)
-	lw	v0,76($fp)
-	addu	v0,v0,1
-	sw	v0,76($fp)
-	lw	v0,80($fp)
-	addu	v0,v0,1
-	sw	v0,80($fp)
-	b	$L39
-$L40:
-	lw	v0,76($fp)
-	lw	a0,96($fp)
-	addu	v1,a0,v0
-	li	v0,32			# 0x20
-	sb	v0,0(v1)
-	lw	v0,76($fp)
-	addu	v0,v0,1
-	sw	v0,76($fp)
-	sw	zero,80($fp)
-$L43:
-	lw	v0,80($fp)
-	lw	v1,36($fp)
-	slt	v0,v0,v1
-	bne	v0,zero,$L46
-	b	$L44
-$L46:
-	lw	v0,76($fp)
-	lw	v1,96($fp)
-	addu	a0,v1,v0
-	lw	v1,80($fp)
-	addu	v0,$fp,24
-	addu	v0,v0,v1
-	lbu	v0,0(v0)
-	sb	v0,0(a0)
-	lw	v0,76($fp)
-	addu	v0,v0,1
-	sw	v0,76($fp)
-	lw	v0,80($fp)
-	addu	v0,v0,1
-	sw	v0,80($fp)
-	b	$L43
-$L44:
-	lw	v0,76($fp)
-	lw	a0,96($fp)
-	addu	v1,a0,v0
-	li	v0,10			# 0xa
-	sb	v0,0(v1)
-	lw	v0,76($fp)
-	addu	v0,v0,1
-	sw	v0,76($fp)
-	sw	zero,80($fp)
-$L47:
-	lw	v0,80($fp)
-	lw	v1,68($fp)
-	slt	v0,v0,v1
-	bne	v0,zero,$L50
-	b	$L48
-$L50:
-	lw	v0,76($fp)
-	lw	v1,96($fp)
-	addu	a0,v1,v0
-	addu	v1,$fp,56
-	lw	v0,80($fp)
-	addu	v0,v1,v0
-	lbu	v0,0(v0)
-	sb	v0,0(a0)
-	lw	v0,76($fp)
-	addu	v0,v0,1
-	sw	v0,76($fp)
-	lw	v0,80($fp)
-	addu	v0,v0,1
-	sw	v0,80($fp)
-	b	$L47
-$L48:
-	lw	v0,76($fp)
-	lw	a0,96($fp)
-	addu	v1,a0,v0
-	li	v0,10			# 0xa
-	sb	v0,0(v1)
-	lw	a0,96($fp)
-	lw	a1,72($fp)
-	la	t9,writeBufferInOFile
-	jal	ra,t9
-	sw	v0,84($fp)
-	lw	v0,84($fp)
-	beq	v0,zero,$L51
-	la	t9,closeFile
-	jal	ra,t9
-	lw	sp,92($fp)
-	li	v0,3			# 0x3
-	sw	v0,88($fp)
-	b	$L38
-$L51:
-	lw	sp,92($fp)
-	sw	zero,88($fp)
-$L38:
-	lw	v0,88($fp)
+
+        # idx ++;
+	lw	v0,OFFSET_IDX_W_H($fp)      # Cargo en v0 lo guardado en la direccion OFFSET_IDX_W_H($fp),
+                                            # que representa la variable idx.
+	addu	v0,v0,1                     # Incremento en 1 unidad a lo cargado en v0. Guardo resultado en v0.
+	sw	v0,OFFSET_IDX_W_H($fp)      # Guardo en la direccion OFFSET_IDX_W_H($fp) el incremento. O sea,
+                                            # guardo el nuevo valor de idx.
+
+        # i = 0;
+	sw	zero,OFFSET_I_W_H($fp)
+$loopWriteHeaderChYInWriteHeader:
+        # for (i = 0; i < chY.length; i++)
+
+        # (i < chY.length)?
+	lw	v0,OFFSET_I_W_H($fp)                # Cargo en v0 lo guardado en la direccion OFFSET_I_W_H($fp), 
+                                                    # que representa a la variable i.
+	lw	v1,OFFSET_CH_Y_LENGHT_W_H($fp)      # Cargo en v0 lo guardado en la direccion 36($fp), que representa la 
+                                                    # variable chY.length.
+	slt	v0,v0,v1                            # Guardo en v0 TRUE si (i < chX.length), sino guardo FALSE.
+	bne	v0,FALSE,$insideOfTheLoopWriteHeaderChY   # Si (i < chY.length) es no es FALSE, o sea 
+                                                          # es TRUE, goto $insideOfTheLoopWriteHeaderChY.
+
+        # i is >= chy.length
+	b	$loadLineBreakInWriteHeader         # Salto incondicional a $loadLineBreakInWriteHeader.
+$insideOfTheLoopWriteHeaderChY:
+        # bufferToLoad[idx] = chY.data[i];
+
+        # bufferToLoad[idx]
+	lw	v0,OFFSET_IDX_W_H($fp)               # Cargo en v0 lo guardado en la direccion OFFSET_IDX_W_H($fp),
+                                                     # que representa la variable idx.
+	lw	v1,OFFSET_BUFF_TO_LOAD_W_H($fp)      # Cargo en v1 lo guardado en la direccion OFFSET_BUFF_TO_LOAD_W_H($fp),
+                                                     # que representa la variable bufferToLoad.
+	addu	a0,v1,v0        # Me muevo sobre el array. Hago bufferToLoad + idx. Cargo la nueva direccion
+                                # sobre bufferToLoad en a0.
+
+        # chY.data[i]
+	lw	v1,OFFSET_I_W_H($fp)              # Cargo en v1 lo guardado en la direccion OFFSET_I_W_H($fp),
+                                                  # que representa a la variable i.
+	addu	v0,$fp,OFFSET_CH_Y_DATA_W_H       # Guardo en v0 la direccion resultante de hacer 
+                                                  # $fp+OFFSET_CH_Y_DATA_W_H. Representa la direccion de 
+                                                  # la variable chY.data.
+	addu	v0,v0,v1        # Me muevo sobre el array. Hago chY.data + i. Cargo la nueva direccion
+                                # sobre chY.data en v0.
+	lbu	v0,0(v0)        # Cargo en v0 lo guardado en la direccion que tiene v0. O sea, hago chY.data[i] (un byte).
+	sb	v0,0(a0)        # Guardo en la direccion guardada en a0 (bufferToLoad[idx]), lo obtenido en el paso
+                                # anterior. O sea, hago efectivamente: bufferToLoad[idx] = chY.data[i];
+
+        # idx ++;       
+	lw	v0,OFFSET_IDX_W_H($fp)      # Cargo en v0 lo guardado en la direccion OFFSET_IDX_W_H($fp), 
+                                            # que representa la variable idx.
+	addu	v0,v0,1                     # Incremento en 1 unidad a lo cargado en v0. Guardo resultado en v0.
+	sw	v0,OFFSET_IDX_W_H($fp)      # Guardo en la direccion OFFSET_IDX_W_H($fp) el incremento. O sea, 
+                                            # guardo el nuevo valor de idx.
+
+        # i++
+	lw	v0,OFFSET_I_W_H($fp)      # Cargo en v0 lo guardado en la direccion OFFSET_I_W_H($fp), 
+                                          # que representa la variable i.
+	addu	v0,v0,1                   # Incremento en 1 unidad a lo cargado en v0. Guardo resultado en v0.
+	sw	v0,OFFSET_I_W_H($fp)      # Guardo en la direccion OFFSET_I_W_H($fp) el incremento. O sea, 
+                                          # guardo el nuevo valor de i.
+
+	b	$loopWriteHeaderChYInWriteHeader # Salto incondicional a $loopWriteHeaderChYInWriteHeader.
+$loadLineBreakInWriteHeader:
+        # bufferToLoad[idx] = '\n';
+
+        # bufferToLoad[idx]
+	lw	v0,OFFSET_IDX_W_H($fp)               # Cargo en v0 lo guardado en la direccion OFFSET_IDX_W_H($fp),
+                                                     # que representa la variable idx.
+	lw	a0,OFFSET_BUFF_TO_LOAD_W_H($fp)      # Cargo en a0 lo guardado en la direccion OFFSET_BUFF_TO_LOAD_W_H($fp),
+                                                     # que representa la variable bufferToLoad.
+	addu	v1,a0,v0        # Me muevo sobre el array. Hago bufferToLoad + idx. Cargo la nueva direccion
+                                # sobre bufferToLoad en v1.
+
+        # '\n'
+	li	v0,10           # Cargo en v0 el inmediato 10, ya que el salto de linea en ascii es igual a 10 ('\n').
+
+	sb	v0,0(v1)        # Guardo en la direccion guardada en v1 (bufferToLoad[idx]), lo obtenido en el paso
+                                # anterior. O sea, hago efectivamente: bufferToLoad[idx] = '\n';
+
+        # idx ++;
+	lw	v0,OFFSET_IDX_W_H($fp)      # Cargo en v0 lo guardado en la direccion OFFSET_IDX_W_H($fp),
+                                            # que representa la variable idx.
+	addu	v0,v0,1                     # Incremento en 1 unidad a lo cargado en v0. Guardo resultado en v0.
+	sw	v0,OFFSET_IDX_W_H($fp)      # Guardo en la direccion OFFSET_IDX_W_H($fp) el incremento. O sea, 
+                                            # guardo el nuevo valor de idx.
+
+        # i = 0
+	sw	zero,OFFSET_I_W_H($fp)      # Esto se hace para hacer el loop siguiente.
+$loopChShadesInWriteHeader:
+        # for (i = 0; i < chShades.length; i++)
+
+        # (i < chShades.length) ?
+	lw	v0,OFFSET_I_W_H($fp)                     # Cargo en v0 lo guardado en la direccion OFFSET_I_W_H($fp),
+                                                         # que representa la variable i.
+	lw	v1,OFFSET_CH_SHADES_LENGHT_W_H($fp)      # Cargo en v0 lo guardado en la direccion OFFSET_CH_SHADES_LENGHT_W_H($fp),
+                                                         # que representa la variable chShades.length.
+	slt	v0,v0,v1                                 # Guardo en v0 TRUE si (i < chShades.length), sino guardo FALSE.
+	bne	v0,FALSE,$insideOfTheLoopChShadesInWriteHeader   # Si (i < chShades.length) es no es FALSE, o sea
+                                                                 # es TRUE, goto $insideOfTheLoopChShadesInWriteHeader.
+
+        # i is >= chShades.length
+	b	$loadLineBreakFinalInWriteHeader         # Salto incondicional a $loadLineBreakFinalInWriteHeader.
+$insideOfTheLoopChShadesInWriteHeader:
+        # bufferToLoad[idx] = chShades.data[i];
+
+        # bufferToLoad[idx]
+	lw	v0,OFFSET_IDX_W_H($fp)               # Cargo en v0 lo guardado en la direccion OFFSET_IDX_W_H($fp),
+                                                     # que representa la variable idx.
+	lw	v1,OFFSET_BUFF_TO_LOAD_W_H($fp)      # Cargo en v1 lo guardado en la direccion OFFSET_BUFF_TO_LOAD_W_H($fp),
+                                                     # que representa la variable bufferToLoad.
+	addu	a0,v1,v0        # Me muevo sobre el array. Hago bufferToLoad + idx. Cargo la nueva direccion
+                                # sobre bufferToLoad en a0.
+
+        # chShades.data[i];
+	addu	v1,$fp,OFFSET_CH_SHADES_DATA_W_H       # Guardo en v1 la direccion resultante de hacer $fp+OFFSET_CH_SHADES_DATA_W_H.
+                                                       # Representa la direccion de la variable chShades.data.
+	lw	v0,OFFSET_I_W_H($fp)                   # Cargo en v0 lo guardado en la direccion OFFSET_I_W_H($fp), que 
+                                                       # representa a la variable i.
+	addu	v0,v1,v0        # Me muevo sobre el array. Hago chShades.data + i. Cargo la nueva direccion
+                                # sobre chShades.data en v0.
+	lbu	v0,0(v0)        # Cargo en v0 lo guardado en la direccion que tiene v0. O sea, hago chShades.data[i] (un byte).
+	sb	v0,0(a0)        # Guardo en la direccion guardada en a0 (bufferToLoad[idx]), lo obtenido en el paso
+                                # anterior. O sea, hago efectivamente: bufferToLoad[idx] = chShades.data[i];
+
+        # idx ++;
+	lw	v0,OFFSET_IDX_W_H($fp)      # Cargo en v0 lo guardado en la direccion OFFSET_IDX_W_H($fp),
+                                            # que representa la variable idx.
+	addu	v0,v0,1                     # Incremento en 1 unidad a lo cargado en v0. Guardo resultado en v0.
+	sw	v0,OFFSET_IDX_W_H($fp)      # Guardo en la direccion OFFSET_IDX_W_H($fp) el incremento. O sea, 
+                                            # guardo el nuevo valor de idx.
+
+        # i++
+	lw	v0,OFFSET_I_W_H($fp)      # Cargo en v0 lo guardado en la direccion OFFSET_I_W_H($fp), que representa la variable i.
+	addu	v0,v0,1                   # Incremento en 1 unidad a lo cargado en v0. Guardo resultado en v0.
+	sw	v0,OFFSET_I_W_H($fp)      # Guardo en la direccion OFFSET_I_W_H($fp) el incremento. O sea, guardo el nuevo valor de i.
+
+	b	$loopChShadesInWriteHeader # Salto incondicional a $loopChShadesInWriteHeader.
+$loadLineBreakFinalInWriteHeader:
+        # bufferToLoad[idx] = '\n';
+
+        # bufferToLoad[idx]
+	lw	v0,OFFSET_IDX_W_H($fp)               # Cargo en v0 lo guardado en la direccion OFFSET_IDX_W_H($fp),
+                                                     # que representa la variable idx.
+	lw	a0,OFFSET_BUFF_TO_LOAD_W_H($fp)      # Cargo en a0 lo guardado en la direccion OFFSET_BUFF_TO_LOAD_W_H($fp),
+                                                     # que representa la variable bufferToLoad.
+	addu	v1,a0,v0        # Me muevo sobre el array. Hago bufferToLoad + idx. Cargo la nueva direccion
+                                # sobre bufferToLoad en v1.
+
+        # '\n'
+	li	v0,10           # Cargo en v0 el inmediato 10, ya que el salto de linea en ascii es igual a 10 ('\n').
+
+	sb	v0,0(v1)        # Guardo en la direccion guardada en v1 (bufferToLoad[idx]), lo obtenido en el paso
+                                # anterior. O sea, hago efectivamente: bufferToLoad[idx] = '\n';
+
+        # int rdoWrite = writeBufferInOFile(bufferToLoad, quantityCharactersInBufferToLoad);
+	lw	a0,OFFSET_BUFF_TO_LOAD_W_H($fp)                   # Cargo en a0 lo guardado en la direccion OFFSET_BUFF_TO_LOAD_W_H($fp),
+                                                                  # que representa la variable bufferToLoad.
+                                                                  # Es el primer parametro de la funcion writeBufferInOFile.
+	lw	a1,OFFSET_QUANTITY_CH_IN_BUF_TO_LOAD_W_H($fp)     # Cargo en a1 lo guardado en la direccion 
+                                                                  # OFFSET_QUANTITY_CH_IN_BUF_TO_LOAD_W_H($fp), que representa 
+                                                                  # la variable quantityCharactersInBufferToLoad. Es el segundo 
+                                                                  # parametro de la funcion writeBufferInOFile.
+	la	t9,writeBufferInOFile                   # Cargo el t9 la direccion de la funcion writeBufferInOFile.
+	jal	ra,t9                                   # Ejecuto la funcion writeBufferInOFile.
+	sw	v0,OFFSET_RDO_WRITE_W_H($fp)            # Guardo en la direccion OFFSET_RDO_WRITE_W_H($fp) lo que esta en v0, que es el 
+                                                        # resultado de la funcion writeBufferInOFile. Esta representa la variable rdoWrite.
+
+        # (rdoWrite != OKEY) ?
+	lw	v0,OFFSET_RDO_WRITE_W_H($fp)            # Cargo en v0 lo guardado en la direccion OFFSET_RDO_WRITE_W_H($fp), que 
+                                                        # representa la variable rdoWrite.
+	beq	v0,OKEY,$returnOkeyInWriteHeader        # If (rdoWrite == OKEY) goto $returnOkeyInWriteHeader.
+
+        # rdoWrite is not equals OKEY
+
+        # closeFile();
+	la	t9,closeFile    # Cargo en t9 la direccion de la funcion closeFile.
+	jal	ra,t9           # Ejecuto la funcion closeFile.
+
+        # return ERROR_WRITE;
+	lw	sp,OFFSET_SP_W_H($fp)          # Cargo en sp lo guardado en la direccion OFFSET_SP_W_H($fp), que es sp.
+	li	v0,ERROR_WRITE                 # Cargo el inmediato ERROR_WRITE en v0.
+	sw	v0,OFFSET_RETURN_W_H($fp)      # Guardo en la direccion OFFSET_RETURN_W_H($fp) lo que tiene v0, que es 
+                                               # el codigo ERROR_WRITE. En esta direccion se cargar el return de la funcion.
+
+	b	$returnWriteHeader             # Salto incondicional a $returnWriteHeader.
+$returnOkeyInWriteHeader:
+        # return OKEY;
+	lw	sp,OFFSET_SP_W_H($fp)          # Cargo en sp lo guardado en la direccion OFFSET_SP_W_H($fp), que es sp.
+	sw	zero,OFFSET_RETURN_W_H($fp)    # Guardo en la direccion OFFSET_RETURN_W_H($fp) cero, que es el codigo OKEY.
+                                               # En esta direccion se cargar el return de la funcion.
+$returnWriteHeader:        
+	lw	v0,OFFSET_RETURN_W_H($fp)      # Cargo en v0 lo que va a retornar la funcion, que esta guardado en la 
+                                               # direccion OFFSET_RETURN_W_H($fp).
+
+        # reconstruyo los registros.
 	move	sp,$fp
-	lw	ra,112(sp)
-	lw	$fp,108(sp)
-	addu	sp,sp,120
+	lw	ra,OFFSET_RA_W_H(sp)
+	lw	$fp,OFFSET_FP_W_H(sp)
+
+        # destruyo stack frame
+	addu	sp,sp,STACK_FRAME_WRITE_HEADER
+
+        # vuelvo a funcion llamante
 	j	ra
 
 	.end	writeHeader
