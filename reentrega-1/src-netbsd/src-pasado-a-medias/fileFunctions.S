@@ -105,9 +105,9 @@ loadFileDescriptor:
         
         # cargo en v0 la direccion del fileOutput.
 	lw	v0,fileOutput
-        # if (fileOutput != NULL) brancheo
+        ## if (fileOutput != NULL) brancheo
 	bne	v0,zero,$fileno
-        # if (fileOutput == NULL) continuo.
+        ## if (fileOutput == NULL) continuo.
         # Hubo error al querer escribir en el archivo => Mensaje de error.
 	#la	a0,__sF+176
 	#la	a1,MENSAJE_ERROR_LOAD_FILE
@@ -163,13 +163,13 @@ closeFile:
 	lw	v1,ofd
         # carga en v0 1
 	li	v0,1
-        # if (ofd == 0) salto a  IfFileOutputNull
+        ## if (ofd == 0) salto a  IfFileOutputNull
 	bne	v1,v0,$IfFileOutputNull
 	sw	zero,fileOutput
 	b	$returnCloseFile
 $IfFileOutputNull:
 	lw	v0,fileOutput  # cargo en v0 fileOutput
-        # if (fileOutput == NULL) return funcion closeFile
+        ## if (fileOutput == NULL) return funcion closeFile
 	beq	v0,zero,$returnCloseFile
         # Sino (fileOutput != NULL ) continuo
         
@@ -237,7 +237,7 @@ writeBufferInOFile:
 	beq	v0,zero,$caracterInvalido # if fileOutPut == false, branch a caracterInvalido
 	lw	v0,68($fp) #Carga en v0 la direccion [68] del Stack Frame, vo= quantityCharactersInBufferToLoad
 	blez	v0,$caracterInvalido #Si  quantityCharactersInBufferToLoad<=0 branch a funcion caracterInvalido
-	b	$incializacionVariables  #Branch a funcion
+	b	$inicializacionVariables  #Branch a funcion
 
 $caracterInvalido:
 	sw	zero,40($fp) #Guarda zero en la direccion [40] del Stack Frame
@@ -286,12 +286,12 @@ $continuacionCicloWhile:
         subu	v0,v1,v0    #v0 = bytesToWrite =quantityCharactersInBufferToLoad - bytesWriteAcum;
         sw	v0,32($fp) # Guardo v0 en la poiscion [32] de memoria , v0=bytesToWrite
         lw	v0,32($fp) #Cargo en v0 la posicion [32] de memoria , v0 = bytesToWrite
-        bgtz	v0,inicioCicloWhile  #if (bytesToWrite<= 0) , si es >0 llama a la  funcion inicioCicloWhile y continua
+        bgtz	v0,$inicioCicloWhile  #if (bytesToWrite<= 0) , si es >0 llama a la  funcion inicioCicloWhile y continua
         sw	zero,24($fp) #Guarda zero en posicion [24] de memoria,
-        b	inicioCicloWhile #Llama a la funcion inicioCicloWhile, en la comparacion completeDelivery==True
+        b	$inicioCicloWhile #Llama a la funcion inicioCicloWhile, en la comparacion completeDelivery==True
 $functionZero:
         sw	zero,40($fp)  #Guardo zero en la posicion [40] del Stack frame
-returnWriteBufferInOFile:
+$returnWriteBufferInOFile:
 	lw	v0,40($fp) #Guarda en v0 lo que hay en la direccion [40] del v0, v0=zero
 	move	sp,$fp  # Iguala sp con fp.
 	lw	ra,56(sp) # Carga en ra stack[56] para retornar a la funcion llamante.
@@ -385,7 +385,7 @@ putch:
 	la	t9,loadDataInBuffer #Cargo la etiqueta a la funcion loadDataInBuffer en el registro t9
 	jal	ra,t9 #Llamo a la funcion loadDataInBuffer y guardo la direccion en el return address / loadDataInBuffer(character);
 	sw	zero,32($fp) #Guardo zero en la posicion [32] del stack frame 
-	b	$exitPutch. #Salto a funcion $L33
+	b	$exitPutch #Salto a funcion $L33
 $ifQuantityGreatEqualMaxBuffer:
 	la	a0,buffer #Cargo address buffer en a0,  ao= buffer
 	lw	a1,quantityCharactersInBuffer  #Cargo quantityCharactersInBuffer word  en a1=quantityCharactersInBuffer
@@ -434,7 +434,7 @@ flush:
     	move	$fp,sp
 
     	lw	v0,quantityCharactersInBuffer #Cargo en v0= quantityCharactersInBuffer
-    	blez	v0,$L37 # if (quantityCharactersInBuffer > 0) , if v0<=0 llama a
+    	blez	v0,$returnZero # if (quantityCharactersInBuffer > 0) , if v0<=0 llama a
     	la	a0,buffer #Cargo direccion  buffer en a0
     	lw	a1,quantityCharactersInBuffer #Cargo word quantityCharactersInBuffer en a1
     	la	t9,writeBufferInOFile #Cargo etiqueta writeBufferInOFile en t9
