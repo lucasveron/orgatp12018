@@ -42,8 +42,8 @@ echo "Se genero el archivo prueba6.pgm, para lo cual se especifico resolution, c
 ./tp1 --resolution 35x52 -c -0.5201-0.15236i --width 3 --height 5 -m mips32 -o - > ./outputs-automatic-tests/outputStdout.pgm
 echo "Se ejecuto con salida estandar, que se redirecciono al archivo outputStdout.pgm, para lo cual se especifico resolution, c, width, height y o (stdout, como - )."
 
-./tp1 -o -r 20x20 ./outputs-automatic-tests/uno.pgm -m mips32
-echo "Se genero el archivo uno.pgm, para lo cual se especifico o."
+#./tp1 -o -r 20x20 ./outputs-automatic-tests/uno.pgm -m mips32
+#echo "Se genero el archivo uno.pgm, para lo cual se especifico o."
 
 ./tp1 -r 20x20 -c 0.282-0.007i -w 0.005 -H 0.005 -o ./outputs-automatic-tests/dos.pgm -m mips32
 echo "Se genero el archivo dos.pgm, para lo cual se especifico c, w, H y o."

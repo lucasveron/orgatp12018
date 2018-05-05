@@ -44,13 +44,15 @@
 #define OFFSET_FP_LOAD_DATA_BUFFER 20
 #define OFFSET_GP_LOAD_DATA_BUFFER 16
 #define OFFSET_STORE_BYTE 8
-#define STACK_FRAME_PUTCH 48
-#define OFFSET_RA_PUTCH 40
-#define OFFSET_FP_PUTCH 36
-#define OFFSET_GP_PUTCH 32
-#define OFFSET_ZERO_PUTCH 24
-#define OFFSET_RETURN_PUTCH 20
-#define OFFSET_CHAR_PUTCH 16
+
+#define STACK_FRAME_PUTCH 56
+#define OFFSET_RA_PUTCH 48
+#define OFFSET_FP_PUTCH 44
+#define OFFSET_GP_PUTCH 40
+#define OFFSET_ZERO_PUTCH 32
+#define OFFSET_RETURN_PUTCH 28
+#define OFFSET_CHAR_PUTCH 24
+
 #define STACK_FRAME_FLUSH 40
 #define OFFSET_RA_FLUSH 32
 #define OFFSET_FP_FLUSH 28
@@ -152,6 +154,10 @@ loadFileDescriptor:
 	bne	v0,zero,$fileno
         ## if (fileOutput == NULL) continuo.
         # Hubo error al querer escribir en el archivo => Mensaje de error.
+	#la	a0,__sF+176
+	#la	a1,MENSAJE_ERROR_LOAD_FILE
+	#la	t9,fprintf
+	#jal	ra,t9
         li a0,FILE_DESCRIPTOR_STDERR          # Cargo en a0 el FILE_DESCRIPTOR_STDERR = 2.
         la a1,MENSAJE_ERROR_LOAD_FILE         # Cargo en a1 el mensaje de error.
         li a2,BYTES_MENSAJE_ERROR_LOAD_FILE   # Cargo en a2 la cantidad de byes a escribir.
@@ -392,6 +398,7 @@ loadDataInBuffer:
         # vuelvo el control a funcion llamante
 	j	ra
 	.end	loadDataInBuffer
+
 #--------------- end loadDataInBuffer ---------------#
 
 #---------------      begin putch     ---------------#
@@ -497,7 +504,7 @@ $exitFlush:
 	.end	flush
 #---------------    begin flush   ---------------#
 
-##-----	writeHeader -----##
+#-------------- begin writeHeader  --------------#
 
         .text
 	.align	2
@@ -881,6 +888,8 @@ $returnWriteHeader:
 	j	ra
 
 	.end	writeHeader
+
+#--------------- end  writeHeader  ---------------#
 
 	.comm	fileOutput,4
 
