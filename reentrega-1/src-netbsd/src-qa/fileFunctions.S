@@ -16,6 +16,11 @@
 #define STACK_FRAME_WRITE_HEADER 112
 
 #define STACK_FRAME_LOAD_FILE_DESC 40
+#define LOAD_FILE_DESC 16
+#define OFFSET_RA_LOAD_FILE 32
+#define OFFSET_FP_LOAD_FILE 28
+#define OFFSET_GP_LOAD_FILE 24
+#define STACK_FRAME_CLOSE_FILE 32
 
 #define OFFSET_RA_W_H 104
 #define OFFSET_FP_W_H 100
@@ -99,9 +104,9 @@ loadFileDescriptor:
         # creacion del stack frame
 	subu	sp,sp,STACK_FRAME_LOAD_FILE_DESC
 	.cprestore 16
-	sw	ra,32(sp)
-	sw	$fp,28(sp)
-	sw	gp,24(sp)
+	sw	ra,OFFSET_RA_LOAD_FILE(sp)
+	sw	$fp,OFFSET_FP_LOAD_FILE(sp)
+	sw	gp,OFFSET_GP_LOAD_FILE(sp)
 
         # de aqui al fin de la funcion uso $fp en lugar de sp.
 	move	$fp,sp
@@ -119,18 +124,18 @@ loadFileDescriptor:
 
 	# return ERROR_FILE
         li      v0,ERROR_FILE  # Cargo codigo de error, que sera el resultado de la funcion.
-	sw	v0,24($fp)     # Guardo en la direccion 24($fp) el resultado de la funcion.
+	sw	v0,LOAD_FILE_DESC($fp)     # Guardo en la direccion 24($fp) el resultado de la funcion.
 	b	$returnLoadFile
 $fileno:
 	lw	v0,fileOutput  # Carga en v0 el valor de fileOutput.
 	lh	v0,14(v0)      # Carga en v0 el file descriptor output.
 	sw	v0,ofd         # Guarda el valor del registro v0 en la direccion de ofd.
-	sw	zero,24($fp)   # Guarda un 0 en stack[24].
+	sw	zero,LOAD_FILE_DESC($fp)   # Guarda un 0 en stack[24].
 $returnLoadFile:
 	lw	v0,24($fp)     # Cargo en v0 el contenido del stack[24] = ERROR_FILE
 	move	sp,$fp         # Iguala sp con fp.
-	lw	ra,32(sp)      # Carga en ra stack[32] para retornar a la funcion llamante.
-	lw	$fp,28(sp)     # Carga en fp stack[28]. ???
+	lw	ra,OFFSET_RA_LOAD_FILE(sp)      # Carga en ra stack[32] para retornar a la funcion llamante.
+	lw	$fp,OFFSET_FP_LOAD_FILE(sp)     # Carga en fp stack[28]. ???
 	addu	sp,sp,STACK_FRAME_LOAD_FILE_DESC       # Rompe el stack frame.
 	j	ra             # Regresa a la funcion llamante.
 	.end	loadFileDescriptor
@@ -143,18 +148,18 @@ $returnLoadFile:
 	.globl	closeFile
 	.ent	closeFile
 closeFile:
-	.frame	$fp,48,ra
+	.frame	$fp,STACK_FRAME_CLOSE_FILE,ra
 	.set	noreorder
 	.cpload	t9
 	.set	reorder
 
         # creacion del stack frame
-	subu	sp,sp,48
+	subu	sp,sp,STACK_FRAME_CLOSE_FILE
 	.cprestore 16
         
-	sw	ra,40(sp)
-	sw	$fp,36(sp)
-	sw	gp,32(sp)
+	sw	ra,OFFSET_RA_CLOSE_FILE(sp)
+	sw	$fp,OFFSET_FP_CLOSE_FILE(sp)
+	sw	gp,OFFSET_GP_CLOSE_FILE(sp)
 
         # de aqui al fin de la funcion uso $fp en lugar de sp.
 	move	$fp,sp
@@ -184,7 +189,7 @@ $IfFileOutputNull:
 	#la	t9,fprintf
 	#jal	ra,t9
         
-        lw	a0,ofd   	# a0 = file descriptor
+        lw	a0,ofd   	# Pongo en a0 el 'file descriptor'
         li      v0, SYS_close
         syscall
         
@@ -201,9 +206,9 @@ $setOutputNull:
 	sw	zero,fileOutput # Pongo un 0 en la dirección del fileOutput
 $returnCloseFile:
 	move	sp,$fp     # Iguala sp con fp.
-	lw	ra,40(sp)  # Carga en ra stack[40] para retornar a la funcion llamante.
-	lw	$fp,36(sp) # Carga en fp stack[36]. ???
-	addu	sp,sp,48   # Rompe el stack frame.
+	lw	ra,OFFSET_RA_CLOSE_FILE(sp)  # Carga en ra stack[24] para retornar a la funcion llamante.
+	lw	$fp,OFFSET_FP_CLOSE_FILE(sp) # Carga en fp stack[20]. ???
+	addu	sp,sp,STACK_FRAME_CLOSE_FILE   # Rompe el stack frame.
 	j	ra         # Regresa a la funcion llamante.
 	.end	closeFile
 #--------------- end closeFile ---------------#
