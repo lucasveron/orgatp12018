@@ -21,6 +21,14 @@
 #define OFFSET_FP_LOAD_FILE 28
 #define OFFSET_GP_LOAD_FILE 24
 #define STACK_FRAME_CLOSE_FILE 32
+#define OFFSET_RA_CLOSE_FILE 24
+#define OFFSET_FP_CLOSE_FILE 20
+#define OFFSET_GP_CLOSE_FILE 16
+#define STACK_FRAME_LOAD_DATA_BUFFER 32
+#define OFFSET_RA_LOAD_DATA_BUFFER 24
+#define OFFSET_FP_LOAD_DATA_BUFFER 20
+#define OFFSET_GP_LOAD_DATA_BUFFER 16
+#define OFFSET_STORE_BYTE 8
 
 #define OFFSET_RA_W_H 104
 #define OFFSET_FP_W_H 100
@@ -124,18 +132,18 @@ loadFileDescriptor:
 
 	# return ERROR_FILE
         li      v0,ERROR_FILE  # Cargo codigo de error, que sera el resultado de la funcion.
-	sw	v0,LOAD_FILE_DESC($fp)     # Guardo en la direccion 24($fp) el resultado de la funcion.
+	sw	v0,LOAD_FILE_DESC($fp)     # Guardo en la direccion LOAD_FILE_DESC($fp) el resultado de la funcion.
 	b	$returnLoadFile
 $fileno:
 	lw	v0,fileOutput  # Carga en v0 el valor de fileOutput.
 	lh	v0,14(v0)      # Carga en v0 el file descriptor output.
 	sw	v0,ofd         # Guarda el valor del registro v0 en la direccion de ofd.
-	sw	zero,LOAD_FILE_DESC($fp)   # Guarda un 0 en stack[24].
+	sw	zero,LOAD_FILE_DESC($fp)   # Guarda un 0 en stack[LOAD_FILE_DESC].
 $returnLoadFile:
-	lw	v0,24($fp)     # Cargo en v0 el contenido del stack[24] = ERROR_FILE
+	lw	v0,LOAD_FILE_DESC($fp)     # Cargo en v0 el contenido del stack[24] = ERROR_FILE
 	move	sp,$fp         # Iguala sp con fp.
-	lw	ra,OFFSET_RA_LOAD_FILE(sp)      # Carga en ra stack[32] para retornar a la funcion llamante.
-	lw	$fp,OFFSET_FP_LOAD_FILE(sp)     # Carga en fp stack[28]. ???
+	lw	ra,OFFSET_RA_LOAD_FILE(sp)      # Carga en ra stack[OFFSET_RA_LOAD_FILE] para retornar a la funcion llamante.
+	lw	$fp,OFFSET_FP_LOAD_FILE(sp)     # Carga en fp stack[OFFSET_FP_LOAD_FILE]. ???
 	addu	sp,sp,STACK_FRAME_LOAD_FILE_DESC       # Rompe el stack frame.
 	j	ra             # Regresa a la funcion llamante.
 	.end	loadFileDescriptor
@@ -313,17 +321,17 @@ $returnWriteBufferInOFile:
 	.globl	loadDataInBuffer
 	.ent	loadDataInBuffer
 loadDataInBuffer:
-	.frame	$fp,24,ra
+	.frame	$fp,STACK_FRAME_LOAD_DATA_BUFFER,ra
 	.set	noreorder
 	.cpload	t9
 	.set	reorder
 
         # creacion de stack frame
-	subu	sp,sp,24
+	subu	sp,sp,STACK_FRAME_LOAD_DATA_BUFFER
 
 	.cprestore 0
-	sw	$fp,20(sp)
-	sw	gp,16(sp)
+	sw	$fp,OFFSET_FP_LOAD_DATA_BUFFER(sp)
+	sw	gp,OFFSET_GP_LOAD_DATA_BUFFER(sp)
 
         # de aqui al fin de la funcion uso $fp en lugar de sp.
 	move	$fp,sp
@@ -331,7 +339,7 @@ loadDataInBuffer:
         # Parametro
 	#void loadDataInBuffer(char character)
         move	v0,a0      # muevo el parametro character, que se encuentra en a0, a v0.
-	sb	v0,8($fp)  # guardo en la direccion 8($fp), el contenido de v0, que es character.
+	sb	v0,OFFSET_STORE_BYTE($fp)  # guardo en la direccion 8($fp), el contenido de v0, que es character.
 	
         # buffer[quantityCharactersInBuffer] = character;
         # cargo en v1 la cantidad de caracteres que me voy a mover sobre buffer.
@@ -351,9 +359,9 @@ loadDataInBuffer:
 	sw	v0,quantityCharactersInBuffer
         
 	move	sp,$fp
-	lw	$fp,20(sp)
+	lw	$fp,OFFSET_FP_LOAD_DATA_BUFFER(sp)
         # destruyo stack frame
-	addu	sp,sp,24
+	addu	sp,sp,STACK_FRAME_LOAD_DATA_BUFFER
         # vuelvo el control a funcion llamante
 	j	ra
 	.end	loadDataInBuffer
