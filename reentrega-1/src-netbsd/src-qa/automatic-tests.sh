@@ -61,7 +61,7 @@ echo "Generación de imagen estandar 10x10 ..."
 
 varDiff=$(diff ./outputs-automatic-tests/comp_mips32_1.pgm ./outputs-automatic-tests/comp_generic_1.pgm 2>&1)
 if [ "$varDiff" = "" ];
- then echo "Ejecucion diff 1 ................................... [OK]";
+ then echo "Ejecucion test diff 1 .............................. [OK]";
 else
  echo "Ejecucion test diff 1 .............................. [ERROR] - Resultado obtenido: ";
  echo $varDiff
