@@ -259,12 +259,12 @@ $inicializacionVariables:
 	sw	v0,24($fp)    #Guardo v0=1 en la direccion [24] del stack frame
 	sw	zero,28($fp) #Guardo zero en la posicion [28] del Stack frame, [28]=bytesWriteAcum
 	lw	v0,68($fp)  #Carga en v0 la direccion [68] del Stack Frame, vo= quantityCharactersInBufferToLoad
-	sw	v0,32($fp) #Guardo v0=bytesWriteAcum=quantityCharactersInBufferToLoad, en la posicion [32] del Stack frame
+	sw	v0,32($fp) #Guardo v0=bytesToWrite=quantityCharactersInBufferToLoad, en la posicion [32] del Stack frame
 $inicioCicloWhile:
 	lw	v1,24($fp) #Cargo en v1, la direccion en la posicion [24] del Stack frame, v1=1
 	li	v0,1 #Carga 1 en v0
 	beq	v1,v0,$mainWhile  #Si v1 = v0, branch  a la funcion, inicio ciclo WHILE
-	b	$functionZero  #Branch a la funcion 28
+	b	$functionZero  #Branch a la funcion functionZero
 $mainWhile:
 	lw	v1,64($fp) #Carga en el v1 la direccion [64] del stack frame, v1=bufferToLoad
 	lw	v0,28($fp) #Carga en v0 la direccion [28] del stack frame , v0=zero
